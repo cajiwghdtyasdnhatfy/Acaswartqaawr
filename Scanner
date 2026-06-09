@@ -1,20 +1,35 @@
--- SCANNER - Roda em cada servidor (COLOCAR NO GITHUB)
+-- HUB SCANNER (roda no hub)
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
+local Library = require(game.ReplicatedStorage:WaitForChild("Library"))
 
-local WEBHOOK_URL = "https://discord.com/api/webhooks/1514031008654295040/efj6sTrpu2HRERFEALNMWpgsCAT0b_7V_S4oFrwclE9rkcfQ8si3EfSpaZ3rNTTnAzVq"
-local HUB_PLACE_ID = 15327728308
 local SCANNER_URL = "https://raw.githubusercontent.com/cajiwghdtyasdnhatfy/Acaswartqaawr/refs/heads/main/Scanner"
+local HUB_PLACE_ID = 15327728308
 
-local ITENS_ALVO = {"barret50", "renellim4", "m79", "backpacktier4"}
+local SERVERS_LIST = {
+    "Abyss", "Aftermath", "Alpha", "Anarchy", "Armageddon",
+    "Banshee", "Blight", "Bravo", "Carnage", "Cataclysm",
+    "Charlie", "Chaos", "Delta", "Despair", "Doom", "Dread",
+    "Echo", "Eclipse", "Eerie", "Fallout", "Foxtrot", "Frenzy",
+    "Gloom", "Golf", "Grave", "Grim", "Harrow", "Havoc", "Hotel",
+    "Ignition", "India", "Inferno", "Jagged", "Judgement", "Juliett",
+    "Kilo", "Kraken", "Krypt", "Lament", "Lima", "Limbo", "Malice", "Marrow",
+    "Mike", "Morbid", "Necrosis", "November", "Null", "Oblivion", "Obsidian",
+    "Oscar", "Papa", "Pestilence", "Plague", "Quarantine", "Quandary", "Quebec",
+    "Ragnarok", "Ravage", "Reaper", "Revenant", "Romeo", "Ruin", "Scourge",
+    "Sentinel", "Shade", "Sierra", "Tango", "Tempest", "Torment", "Ulcer", "Unholy"
+}
+
+local scannedServers = {}
+local currentIndex = 1
 
 local function sendToDiscord(msg)
     local req = syn and syn.request or http_request or request
     if req then
         pcall(function()
             req({
-                Url = WEBHOOK_URL,
+                Url = "https://discord.com/api/webhooks/1514031008654295040/efj6sTrpu2HRERFEALNMWpgsCAT0b_7V_S4oFrwclE9rkcfQ8si3EfSpaZ3rNTTnAzVq",
                 Method = "POST",
                 Headers = {["Content-Type"] = "application/json"},
                 Body = HttpService:JSONEncode({content = msg})
@@ -23,52 +38,61 @@ local function sendToDiscord(msg)
     end
 end
 
-local function scan()
-    print("[SCANNER] Iniciando scan...")
-    local found = {}
-    
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player == Players.LocalPlayer then continue end
-        
-        local inv = player:FindFirstChild("GunInventory")
-        if inv then
-            for _, obj in ipairs(inv:GetChildren()) do
-                if obj:IsA("ObjectValue") and obj.Value then
-                    local nome = obj.Value.Name:lower()
-                    for _, alvo in ipairs(ITENS_ALVO) do
-                        if nome:find(alvo) then
-                            local mag = obj:FindFirstChild("BulletsInMagazine") and obj.BulletsInMagazine.Value or 0
-                            table.insert(found, string.format("**%s** | %s | %d balas", player.Name, obj.Value.Name, mag))
-                        end
-                    end
-                end
+local function saveProgress()
+    pcall(function()
+        writefile("scanner_progress.txt", currentIndex .. "\n" .. HttpService:JSONEncode(scannedServers))
+    end)
+end
+
+local function loadProgress()
+    pcall(function()
+        local data = readfile("scanner_progress.txt")
+        if data then
+            local lines = {}
+            for line in data:gmatch("[^\r\n]+") do
+                table.insert(lines, line)
             end
+            currentIndex = tonumber(lines[1]) or 1
+            scannedServers = HttpService:JSONDecode(lines[2]) or {}
         end
-        
-        local bp = player:GetAttribute("EquipmentBackpack")
-        if bp and tostring(bp):lower():find("backpacktier4") then
-            table.insert(found, string.format("**%s** | BackpackTier4 | N/A", player.Name))
-        end
+    end)
+end
+
+local function goToNextServer()
+    if currentIndex > #SERVERS_LIST then
+        sendToDiscord("🏁 **SCAN FINALIZADO!**")
+        return false
     end
     
-    if #found > 0 then
-        sendToDiscord("⚠️ **ITENS ENCONTRADOS!**\n" .. table.concat(found, "\n"))
-    else
-        sendToDiscord("✅ Nada encontrado neste servidor.")
+    local serverName = SERVERS_LIST[currentIndex]
+    currentIndex = currentIndex + 1
+    
+    if scannedServers[serverName] then
+        return goToNextServer()
     end
     
-    print("[SCANNER] Scan finalizado, voltando ao hub...")
+    scannedServers[serverName] = true
+    saveProgress()
+    
+    print("[HUB] Entrando em: " .. serverName)
+    sendToDiscord("🔄 **Indo para:** " .. serverName .. " (" .. currentIndex-1 .. "/" .. #SERVERS_LIST .. ")")
+    
+    Library.Network:Fire("Player.JoinServer", serverName)
+    return true
+end
+
+loadProgress()
+
+if game.PlaceId == HUB_PLACE_ID then
+    sendToDiscord("🚀 **Hub Scanner Iniciado!**")
     task.wait(3)
-    TeleportService:Teleport(HUB_PLACE_ID)
+    goToNextServer()
 end
 
--- CONFIGURA O QUEUE PARA PRÓXIMOS TELEPORTES
-local queueFunc = queue_on_teleport or (syn and syn.queue_on_teleport) or (fluxus and fluxus.queue_on_teleport)
-if queueFunc then
-    queueFunc('loadstring(game:HttpGet("' .. SCANNER_URL .. '"))()')
-    print("[SCANNER] Queue configurado para o próximo servidor")
-end
-
--- EXECUTA O SCAN
-task.wait(5)
-scan()
+game:GetService("Players").LocalPlayer.OnTeleport:Connect(function()
+    task.wait(5)
+    if game.PlaceId == HUB_PLACE_ID then
+        print("[HUB] Voltou! Próximo servidor...")
+        goToNextServer()
+    end
+end)
