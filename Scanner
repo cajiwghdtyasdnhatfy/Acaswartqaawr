@@ -1,4 +1,4 @@
--- SCANNER - Roda em cada servidor (usa TeleportData)
+-- SCANNER - Versão que envia "⚠️ Mundo Aftermath 🧟"
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
@@ -7,15 +7,6 @@ local WEBHOOK_URL = "https://discord.com/api/webhooks/1514031008654295040/efj6sT
 local HUB_PLACE_ID = 15327728308
 
 local ITENS_ALVO = {"barret50", "renellim4", "m79", "backpacktier4"}
-
--- RECUPERA OS DADOS DO TELEPORTE
-local teleportData = TeleportService:GetLocalPlayerTeleportData()
-
-print("[SCANNER] TeleportData recebido:", teleportData)
-
-if teleportData and teleportData.action == "scan" then
-    print("[SCANNER] Modo scan ativado para: " .. teleportData.serverName)
-end
 
 local function sendToDiscord(msg)
     local req = syn and syn.request or http_request or request
@@ -31,55 +22,76 @@ local function sendToDiscord(msg)
     end
 end
 
-local function scan()
-    print("[SCANNER] Iniciando scan...")
-    local found = {}
+local function getServerName()
+    local success, info = pcall(function()
+        return game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId)
+    end
     
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player == Players.LocalPlayer then continue end
-        
-        local inv = player:FindFirstChild("GunInventory")
-        if inv then
-            for _, obj in ipairs(inv:GetChildren()) do
-                if obj:IsA("ObjectValue") and obj.Value then
-                    local nome = obj.Value.Name:lower()
-                    for _, alvo in ipairs(ITENS_ALVO) do
-                        if nome:find(alvo) then
-                            local mag = obj:FindFirstChild("BulletsInMagazine") and obj.BulletsInMagazine.Value or 0
-                            table.insert(found, string.format("**%s** | %s | %d balas", player.Name, obj.Value.Name, mag))
-                        end
+    local name = success and info.Name or tostring(game.PlaceId)
+    
+    local servers = {
+        "Abyss", "Aftermath", "Alpha", "Anarchy", "Armageddon",
+        "Banshee", "Blight", "Bravo", "Carnage", "Cataclysm",
+        "Charlie", "Chaos", "Delta", "Despair", "Doom", "Dread",
+        "Echo", "Eclipse", "Eerie", "Fallout", "Foxtrot", "Frenzy",
+        "Gloom", "Golf", "Grave", "Grim", "Harrow", "Havoc", "Hotel",
+        "Ignition", "India", "Inferno", "Jagged", "Judgement", "Juliett",
+        "Kilo", "Kraken", "Krypt", "Lament", "Lima", "Limbo", "Malice", "Marrow",
+        "Mike", "Morbid", "Necrosis", "November", "Null", "Oblivion", "Obsidian",
+        "Oscar", "Papa", "Pestilence", "Plague", "Quarantine", "Quandary", "Quebec",
+        "Ragnarok", "Ravage", "Reaper", "Revenant", "Romeo", "Ruin", "Scourge",
+        "Sentinel", "Shade", "Sierra", "Tango", "Tempest", "Torment", "Ulcer", "Unholy"
+    }
+    
+    for _, s in pairs(servers) do
+        if string.find(name, s) then
+            return s
+        end
+    end
+    return "Desconhecido"
+end
+
+local serverName = getServerName()
+
+-- ENVIA O AVISO
+sendToDiscord("⚠️ Mundo " .. serverName .. " 🧟")
+
+-- ESCANEIA
+local found = {}
+
+for _, player in ipairs(Players:GetPlayers()) do
+    if player == Players.LocalPlayer then continue end
+    
+    local inv = player:FindFirstChild("GunInventory")
+    if inv then
+        for _, obj in ipairs(inv:GetChildren()) do
+            if obj:IsA("ObjectValue") and obj.Value then
+                local nome = obj.Value.Name:lower()
+                for _, alvo in ipairs(ITENS_ALVO) do
+                    if nome:find(alvo) then
+                        local mag = obj:FindFirstChild("BulletsInMagazine") and obj.BulletsInMagazine.Value or 0
+                        table.insert(found, string.format("%s | %s | %d balas", player.Name, obj.Value.Name, mag))
                     end
                 end
             end
         end
-        
-        local bp = player:GetAttribute("EquipmentBackpack")
-        if bp and tostring(bp):lower():find("backpacktier4") then
-            table.insert(found, string.format("**%s** | BackpackTier4 | N/A", player.Name))
-        end
     end
     
-    local serverName = teleportData and teleportData.serverName or "Desconhecido"
-    
-    if #found > 0 then
-        sendToDiscord("⚠️ **" .. serverName .. "** - " .. #found .. " item(ns):\n" .. table.concat(found, "\n"))
-    else
-        sendToDiscord("✅ **" .. serverName .. "** | Nada encontrado.")
+    local bp = player:GetAttribute("EquipmentBackpack")
+    if bp and tostring(bp):lower():find("backpacktier4") then
+        table.insert(found, string.format("%s | BackpackTier4 | N/A", player.Name))
     end
-    
-    print("[SCANNER] Scan finalizado, voltando ao hub...")
-    task.wait(3)
-    
-    -- Volta pro hub com os dados atualizados
-    local options = Instance.new("TeleportOptions")
-    options:SetTeleportData({
-        action = "return",
-        nextIndex = (teleportData and teleportData.currentIndex or 1),
-        scannedServers = teleportData and teleportData.scannedServers or {}
-    })
-    
-    TeleportService:Teleport(HUB_PLACE_ID, options)
 end
 
-task.wait(5)
-scan()
+-- ENVIA OS ITENS
+if #found > 0 then
+    for _, item in pairs(found) do
+        sendToDiscord(item)
+    end
+else
+    sendToDiscord("Nada encontrado.")
+end
+
+-- VOLTA PRO HUB
+task.wait(3)
+TeleportService:Teleport(HUB_PLACE_ID)
