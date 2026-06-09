@@ -1,4 +1,4 @@
--- SCANNER - Versão que envia "⚠️ Mundo Aftermath 🧟"
+-- SCANNER CORRETO para o GitHub
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
@@ -6,7 +6,7 @@ local TeleportService = game:GetService("TeleportService")
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1514031008654295040/efj6sTrpu2HRERFEALNMWpgsCAT0b_7V_S4oFrwclE9rkcfQ8si3EfSpaZ3rNTTnAzVq"
 local HUB_PLACE_ID = 15327728308
 
-local ITENS_ALVO = {"barret50", "renellim4", "m79", "backpacktier4","fists"}
+local ITENS_ALVO = {"barret50", "renellim4", "m79", "backpacktier4"}
 
 local function sendToDiscord(msg)
     local req = syn and syn.request or http_request or request
@@ -22,41 +22,11 @@ local function sendToDiscord(msg)
     end
 end
 
-local function getServerName()
-    local success, info = pcall(function()
-        return game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId)
-    end
-    
-    local name = success and info.Name or tostring(game.PlaceId)
-    
-    local servers = {
-        "Abyss", "Aftermath", "Alpha", "Anarchy", "Armageddon",
-        "Banshee", "Blight", "Bravo", "Carnage", "Cataclysm",
-        "Charlie", "Chaos", "Delta", "Despair", "Doom", "Dread",
-        "Echo", "Eclipse", "Eerie", "Fallout", "Foxtrot", "Frenzy",
-        "Gloom", "Golf", "Grave", "Grim", "Harrow", "Havoc", "Hotel",
-        "Ignition", "India", "Inferno", "Jagged", "Judgement", "Juliett",
-        "Kilo", "Kraken", "Krypt", "Lament", "Lima", "Limbo", "Malice", "Marrow",
-        "Mike", "Morbid", "Necrosis", "November", "Null", "Oblivion", "Obsidian",
-        "Oscar", "Papa", "Pestilence", "Plague", "Quarantine", "Quandary", "Quebec",
-        "Ragnarok", "Ravage", "Reaper", "Revenant", "Romeo", "Ruin", "Scourge",
-        "Sentinel", "Shade", "Sierra", "Tango", "Tempest", "Torment", "Ulcer", "Unholy"
-    }
-    
-    for _, s in pairs(servers) do
-        if string.find(name, s) then
-            return s
-        end
-    end
-    return "Desconhecido"
-end
+-- AVISA QUE O SCANNER INICIOU
+sendToDiscord("📢 SCANNER INICIADO no servidor: " .. game.PlaceId)
 
-local serverName = getServerName()
+task.wait(3)
 
--- ENVIA O AVISO
-sendToDiscord("⚠️ Mundo " .. serverName .. " 🧟")
-
--- ESCANEIA
 local found = {}
 
 for _, player in ipairs(Players:GetPlayers()) do
@@ -66,11 +36,12 @@ for _, player in ipairs(Players:GetPlayers()) do
     if inv then
         for _, obj in ipairs(inv:GetChildren()) do
             if obj:IsA("ObjectValue") and obj.Value then
-                local nome = obj.Value.Name:lower()
+                local nome = obj.Value.Name
                 for _, alvo in ipairs(ITENS_ALVO) do
-                    if nome:find(alvo) then
+                    if nome and nome:lower():find(alvo:lower()) then
                         local mag = obj:FindFirstChild("BulletsInMagazine") and obj.BulletsInMagazine.Value or 0
-                        table.insert(found, string.format("%s | %s | %d balas", player.Name, obj.Value.Name, mag))
+                        table.insert(found, string.format("%s | %s | %d balas", player.Name, nome, mag))
+                        sendToDiscord("🔫 ENCONTRADO: " .. player.Name .. " | " .. nome)
                     end
                 end
             end
@@ -80,18 +51,16 @@ for _, player in ipairs(Players:GetPlayers()) do
     local bp = player:GetAttribute("EquipmentBackpack")
     if bp and tostring(bp):lower():find("backpacktier4") then
         table.insert(found, string.format("%s | BackpackTier4 | N/A", player.Name))
+        sendToDiscord("🎒 BACKPACK: " .. player.Name)
     end
 end
 
--- ENVIA OS ITENS
 if #found > 0 then
-    for _, item in pairs(found) do
-        sendToDiscord(item)
-    end
+    sendToDiscord("⚠️ TOTAL: " .. #found .. " item(ns) encontrados")
 else
-    sendToDiscord("Nada encontrado.")
+    sendToDiscord("✅ Nada encontrado")
 end
 
--- VOLTA PRO HUB
+sendToDiscord("🔄 Voltando para o hub em 3 segundos...")
 task.wait(3)
 TeleportService:Teleport(HUB_PLACE_ID)
