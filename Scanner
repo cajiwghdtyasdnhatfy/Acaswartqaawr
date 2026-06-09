@@ -1,12 +1,11 @@
--- Scanner que roda APÓS o teleporte
+-- SCANNER - Roda em cada servidor
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
-local Library = require(game.ReplicatedStorage:WaitForChild("Library"))
 
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1514031008654295040/efj6sTrpu2HRERFEALNMWpgsCAT0b_7V_S4oFrwclE9rkcfQ8si3EfSpaZ3rNTTnAzVq"
 local HUB_PLACE_ID = 15327728308
-local ITENS_ALVO = {"barret50", "renellim4", "m79", "backpacktier4","fists"}
+local ITENS_ALVO = {"barret50", "renellim4", "m79", "backpacktier4"}
 
 local function sendToDiscord(msg)
     local req = syn and syn.request or http_request or request
@@ -50,16 +49,15 @@ local function scan()
     end
     
     if #found > 0 then
-        sendToDiscord("⚠️ **ITENS ENCONTRADOS!**\n" .. table.concat(found, "\n"))
+        sendToDiscord("⚠️ **" .. game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name .. "**\n" .. table.concat(found, "\n"))
     else
-        sendToDiscord("✅ Nada encontrado neste servidor.")
+        sendToDiscord("✅ **" .. game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name .. "** | Nada encontrado.")
     end
     
     -- Volta pro hub
-    task.wait(5)
+    task.wait(3)
     TeleportService:Teleport(HUB_PLACE_ID)
 end
 
--- Aguarda o servidor carregar e executa
 task.wait(5)
 scan()
