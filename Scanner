@@ -1,10 +1,12 @@
--- SCANNER - Roda em cada servidor
+-- SCANNER - Roda em cada servidor (COLOCAR NO GITHUB)
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
 
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1514031008654295040/efj6sTrpu2HRERFEALNMWpgsCAT0b_7V_S4oFrwclE9rkcfQ8si3EfSpaZ3rNTTnAzVq"
 local HUB_PLACE_ID = 15327728308
+local SCANNER_URL = "https://raw.githubusercontent.com/cajiwghdtyasdnhatfy/Acaswartqaawr/refs/heads/main/Scanner"
+
 local ITENS_ALVO = {"barret50", "renellim4", "m79", "backpacktier4"}
 
 local function sendToDiscord(msg)
@@ -22,6 +24,7 @@ local function sendToDiscord(msg)
 end
 
 local function scan()
+    print("[SCANNER] Iniciando scan...")
     local found = {}
     
     for _, player in ipairs(Players:GetPlayers()) do
@@ -49,15 +52,23 @@ local function scan()
     end
     
     if #found > 0 then
-        sendToDiscord("⚠️ **" .. game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name .. "**\n" .. table.concat(found, "\n"))
+        sendToDiscord("⚠️ **ITENS ENCONTRADOS!**\n" .. table.concat(found, "\n"))
     else
-        sendToDiscord("✅ **" .. game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name .. "** | Nada encontrado.")
+        sendToDiscord("✅ Nada encontrado neste servidor.")
     end
     
-    -- Volta pro hub
+    print("[SCANNER] Scan finalizado, voltando ao hub...")
     task.wait(3)
     TeleportService:Teleport(HUB_PLACE_ID)
 end
 
+-- CONFIGURA O QUEUE PARA PRÓXIMOS TELEPORTES
+local queueFunc = queue_on_teleport or (syn and syn.queue_on_teleport) or (fluxus and fluxus.queue_on_teleport)
+if queueFunc then
+    queueFunc('loadstring(game:HttpGet("' .. SCANNER_URL .. '"))()')
+    print("[SCANNER] Queue configurado para o próximo servidor")
+end
+
+-- EXECUTA O SCAN
 task.wait(5)
 scan()
