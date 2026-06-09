@@ -1,32 +1,33 @@
--- Coloque isso em um botão ou script de interface (GUI)
+-- Scanner que roda APÓS o teleporte
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
+local Library = require(game.ReplicatedStorage:WaitForChild("Library"))
 
--- As configurações ficam fixas aqui dentro, nada de _G
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1514031008654295040/efj6sTrpu2HRERFEALNMWpgsCAT0b_7V_S4oFrwclE9rkcfQ8si3EfSpaZ3rNTTnAzVq"
+local HUB_PLACE_ID = 15327728308
 local ITENS_ALVO = {"barret50", "renellim4", "m79", "backpacktier4","fists"}
 
-local function enviarDiscord(msg)
-    local requestFunc = syn and syn.request or http_request or request
-    if not requestFunc then return end
-    
-    pcall(function()
-        requestFunc({
-            Url = WEBHOOK_URL,
-            Method = "POST",
-            Headers = {["Content-Type"] = "application/json"},
-            Body = HttpService:JSONEncode({content = msg})
-        })
-    end)
+local function sendToDiscord(msg)
+    local req = syn and syn.request or http_request or request
+    if req then
+        pcall(function()
+            req({
+                Url = WEBHOOK_URL,
+                Method = "POST",
+                Headers = {["Content-Type"] = "application/json"},
+                Body = HttpService:JSONEncode({content = msg})
+            })
+        end)
+    end
 end
 
-local function iniciarScan()
+local function scan()
     local found = {}
     
     for _, player in ipairs(Players:GetPlayers()) do
         if player == Players.LocalPlayer then continue end
         
-        -- Scan de Armas
         local inv = player:FindFirstChild("GunInventory")
         if inv then
             for _, obj in ipairs(inv:GetChildren()) do
@@ -42,7 +43,6 @@ local function iniciarScan()
             end
         end
         
-        -- Scan de Backpack
         local bp = player:GetAttribute("EquipmentBackpack")
         if bp and tostring(bp):lower():find("backpacktier4") then
             table.insert(found, string.format("**%s** | BackpackTier4 | N/A", player.Name))
@@ -50,11 +50,16 @@ local function iniciarScan()
     end
     
     if #found > 0 then
-        enviarDiscord("Itens encontrados:\n" .. table.concat(found, "\n"))
+        sendToDiscord("⚠️ **ITENS ENCONTRADOS!**\n" .. table.concat(found, "\n"))
     else
-        enviarDiscord("Nada encontrado neste servidor.")
+        sendToDiscord("✅ Nada encontrado neste servidor.")
     end
+    
+    -- Volta pro hub
+    task.wait(5)
+    TeleportService:Teleport(HUB_PLACE_ID)
 end
 
--- Basta chamar esta função quando clicar no botão
-iniciarScan()
+-- Aguarda o servidor carregar e executa
+task.wait(5)
+scan()
