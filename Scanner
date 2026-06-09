@@ -1,0 +1,60 @@
+-- Coloque isso em um botão ou script de interface (GUI)
+local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
+
+-- As configurações ficam fixas aqui dentro, nada de _G
+local WEBHOOK_URL = "https://discord.com/api/webhooks/1514031008654295040/efj6sTrpu2HRERFEALNMWpgsCAT0b_7V_S4oFrwclE9rkcfQ8si3EfSpaZ3rNTTnAzVq"
+local ITENS_ALVO = {"barret50", "renellim4", "m79", "backpacktier4"}
+
+local function enviarDiscord(msg)
+    local requestFunc = syn and syn.request or http_request or request
+    if not requestFunc then return end
+    
+    pcall(function()
+        requestFunc({
+            Url = WEBHOOK_URL,
+            Method = "POST",
+            Headers = {["Content-Type"] = "application/json"},
+            Body = HttpService:JSONEncode({content = msg})
+        })
+    end)
+end
+
+local function iniciarScan()
+    local found = {}
+    
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player == Players.LocalPlayer then continue end
+        
+        -- Scan de Armas
+        local inv = player:FindFirstChild("GunInventory")
+        if inv then
+            for _, obj in ipairs(inv:GetChildren()) do
+                if obj:IsA("ObjectValue") and obj.Value then
+                    local nome = obj.Value.Name:lower()
+                    for _, alvo in ipairs(ITENS_ALVO) do
+                        if nome:find(alvo) then
+                            local mag = obj:FindFirstChild("BulletsInMagazine") and obj.BulletsInMagazine.Value or 0
+                            table.insert(found, string.format("**%s** | %s | %d balas", player.Name, obj.Value.Name, mag))
+                        end
+                    end
+                end
+            end
+        end
+        
+        -- Scan de Backpack
+        local bp = player:GetAttribute("EquipmentBackpack")
+        if bp and tostring(bp):lower():find("backpacktier4") then
+            table.insert(found, string.format("**%s** | BackpackTier4 | N/A", player.Name))
+        end
+    end
+    
+    if #found > 0 then
+        enviarDiscord("Itens encontrados:\n" .. table.concat(found, "\n"))
+    else
+        enviarDiscord("Nada encontrado neste servidor.")
+    end
+end
+
+-- Basta chamar esta função quando clicar no botão
+iniciarScan()
