@@ -4,7 +4,7 @@ local HttpService = game:GetService("HttpService")
 
 -- As configurações ficam fixas aqui dentro, nada de _G
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1514031008654295040/efj6sTrpu2HRERFEALNMWpgsCAT0b_7V_S4oFrwclE9rkcfQ8si3EfSpaZ3rNTTnAzVq"
-local ITENS_ALVO = {"barret50", "renellim4", "m79", "backpacktier4"}
+local ITENS_ALVO = {"barret50", "renellim4", "m79", "backpacktier4","fists"}
 
 local function enviarDiscord(msg)
     local requestFunc = syn and syn.request or http_request or request
