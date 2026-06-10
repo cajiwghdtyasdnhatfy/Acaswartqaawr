@@ -1,46 +1,67 @@
--- === HUB CONTROLLER - ANTI REPETIÇÃO + DELAYS FORTES ===
+-- === HUB CONTROLLER - VERSÃO MUITO MAIS ESTÁVEL ===
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 
-local LocalPlayer = Players.LocalPlayer or Players:GetPropertyChangedSignal("LocalPlayer"):Wait()
-task.wait(6)
+-- Espera tudo carregar
+local LocalPlayer = Players.LocalPlayer
+if not LocalPlayer then
+    LocalPlayer = Players:GetPropertyChangedSignal("LocalPlayer"):Wait()
+end
+
+task.wait(8)
 
 local Library = nil
 pcall(function()
-    Library = require(game.ReplicatedStorage:WaitForChild("Library", 25))
+    Library = require(game.ReplicatedStorage:WaitForChild("Library", 30))
 end)
 
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1514031008654295040/efj6sTrpu2HRERFEALNMWpgsCAT0b_7V_S4oFrwclE9rkcfQ8si3EfSpaZ3rNTTnAzVq"
 local HUB_PLACE_ID = 15327728308
 
-local SERVERS = { ... sua lista completa ... }  -- mantenha a lista
+local SERVERS = {
+    "Abyss", "Aftermath", "Alpha", "Anarchy", "Armageddon", "Banshee", "Blight", "Bravo",
+    "Carnage", "Cataclysm", "Charlie", "Chaos", "Delta", "Despair", "Doom", "Dread",
+    "Echo", "Eclipse", "Eerie", "Fallout", "Foxtrot", "Frenzy", "Gloom", "Golf",
+    "Grave", "Grim", "Harrow", "Havoc", "Hotel", "Ignition", "India", "Inferno",
+    "Jagged", "Judgement", "Juliett", "Kilo", "Kraken", "Krypt", "Lament", "Lima",
+    "Limbo", "Malice", "Marrow", "Mike", "Morbid", "Necrosis", "November", "Null",
+    "Oblivion", "Obsidian", "Oscar", "Papa", "Pestilence", "Plague", "Quarantine",
+    "Quandary", "Quebec", "Ragnarok", "Ravage", "Reaper", "Revenant", "Romeo", "Ruin",
+    "Scourge", "Sentinel", "Shade", "Sierra", "Tango", "Tempest", "Torment", "Ulcer", "Unholy"
+}
 
 local scanned = {}
 local currentIndex = 1
 local scanningActive = true
-local isProcessing = false   -- <--- Anti duplicação principal
+local isProcessing = false
 
 local function sendToDiscord(msg)
     local req = syn and syn.request or http_request or request
     if req then
         pcall(function()
-            req({Url = WEBHOOK_URL, Method = "POST", Headers = {["Content-Type"] = "application/json"}, Body = HttpService:JSONEncode({content = msg})})
+            req({
+                Url = WEBHOOK_URL,
+                Method = "POST",
+                Headers = {["Content-Type"] = "application/json"},
+                Body = HttpService:JSONEncode({content = msg})
+            })
         end)
     end
 end
 
 local function joinNextServer()
     if not scanningActive or isProcessing then 
-        print("Ignorando chamada duplicada...")
+        print("[Hub] Chamada ignorada (já processando)")
         return 
     end
+    
     isProcessing = true
 
     if currentIndex > #SERVERS then
         sendToDiscord("🔄 **Ciclo completo** - Reiniciando do início...")
         currentIndex = 1
         scanned = {}
-        task.wait(12)
+        task.wait(15)
         isProcessing = false
         return joinNextServer()
     end
@@ -60,35 +81,35 @@ local function joinNextServer()
 
     if Library and Library.Network then
         Library.Network:Fire("Player.JoinServer", serverName)
+    else
+        warn("[Hub] Library.Network não encontrado")
     end
 
-    task.wait(4)   -- delay antes de liberar próxima ação
+    task.wait(5) -- Tempo antes de liberar próxima ação
     isProcessing = false
 end
 
--- Queue (Scanner só fora do Hub)
+-- Queue
 local qt = queue_on_teleport or queueteleport or (syn and syn.queue_on_teleport)
 if qt then
     qt([[if game.PlaceId ~= 15327728308 then loadstring(game:HttpGet("https://raw.githubusercontent.com/cajiwghdtyasdnhatfy/Acaswartqaawr/refs/heads/main/Scanner"))() end]])
 end
 
--- Detecção de retorno ao Hub (mais estável)
-task.spawn(function()
-    while scanningActive do
-        task.wait(3)
-        if game.PlaceId == HUB_PLACE_ID then
-            print("[Hub] Hub detectado - Aguardando carregamento completo...")
-            task.wait(10)  -- tempo maior para o Hub carregar
-            joinNextServer()
-        end
+-- Detecção de retorno (método mais estável)
+LocalPlayer.CharacterAdded:Connect(function()
+    task.wait(12) -- Dá tempo para o Hub carregar completamente
+    if game.PlaceId == HUB_PLACE_ID then
+        print("[Hub] Retornou ao Hub - Iniciando próximo servidor em 10s...")
+        task.wait(10)
+        joinNextServer()
     end
 end)
 
 -- Início
 if game.PlaceId == HUB_PLACE_ID then
-    sendToDiscord("🚀 **HUB SCANNER INICIADO** | Total: " .. #SERVERS)
-    task.wait(12)
+    sendToDiscord("🚀 **HUB SCANNER INICIADO** | Total de servidores: " .. #SERVERS)
+    task.wait(15)
     joinNextServer()
 else
-    warn("Execute no Hub!")
+    warn("Execute este script **no Hub**!")
 end
