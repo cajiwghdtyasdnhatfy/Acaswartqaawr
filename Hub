@@ -1,17 +1,11 @@
--- === HUB CONTROLLER - VERSÃO ESTÁVEL ===
+-- === HUB CONTROLLER - VERSÃO COM DELAYS SEGURAS ===
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 
--- Espera o Library carregar
 local Library = nil
-local success, err = pcall(function()
-    Library = require(game.ReplicatedStorage:WaitForChild("Library", 10))
+pcall(function()
+    Library = require(game.ReplicatedStorage:WaitForChild("Library", 15))
 end)
-if not success or not Library then
-    warn("[Hub] Library não encontrado! Tentando novamente...")
-    task.wait(5)
-    Library = require(game.ReplicatedStorage:WaitForChild("Library"))
-end
 
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1514031008654295040/efj6sTrpu2HRERFEALNMWpgsCAT0b_7V_S4oFrwclE9rkcfQ8si3EfSpaZ3rNTTnAzVq"
 local HUB_PLACE_ID = 15327728308
@@ -33,6 +27,7 @@ local SERVERS = {
 local scanned = {}
 local currentIndex = 1
 local scanningActive = true
+local isProcessing = false  -- Anti-duplicação
 
 local function sendToDiscord(msg)
     local req = syn and syn.request or http_request or request
@@ -49,16 +44,24 @@ local function sendToDiscord(msg)
 end
 
 local function joinNextServer()
-    if not scanningActive then return end
+    if not scanningActive or isProcessing then return end
+    isProcessing = true
+
     if currentIndex > #SERVERS then
-        sendToDiscord("✅ **SCAN FINALIZADO**")
+        sendToDiscord("✅ **SCAN FINALIZADO** - Todos os servidores escaneados!")
         scanningActive = false
+        isProcessing = false
         return
     end
 
     local serverName = SERVERS[currentIndex]
     currentIndex += 1
-    if scanned[serverName] then return joinNextServer() end
+
+    if scanned[serverName] then 
+        isProcessing = false
+        return joinNextServer() 
+    end
+
     scanned[serverName] = true
 
     print("[Hub] Entrando em: " .. serverName)
@@ -67,31 +70,34 @@ local function joinNextServer()
     if Library and Library.Network then
         Library.Network:Fire("Player.JoinServer", serverName)
     else
-        warn("[Hub] Library.Network não encontrado!")
+        warn("[Hub] Library não carregada!")
     end
+
+    task.wait(2)
+    isProcessing = false
 end
 
--- Queue
+-- Queue (só Scanner fora do Hub)
 local qt = queue_on_teleport or queueteleport or (syn and syn.queue_on_teleport)
 if qt then
     qt([[if game.PlaceId ~= 15327728308 then loadstring(game:HttpGet("https://raw.githubusercontent.com/cajiwghdtyasdnhatfy/Acaswartqaawr/refs/heads/main/Scanner"))() end]])
 end
 
--- Detecta retorno
+-- Detecta retorno ao Hub com mais segurança
 Players.LocalPlayer.OnTeleport:Connect(function()
-    task.wait(6)
+    task.wait(8) -- Espera mais tempo para o Hub carregar completamente
     if game.PlaceId == HUB_PLACE_ID then
-        print("[Hub] Retornou ao Hub!")
-        task.wait(4)
+        print("[Hub] Retornou ao Hub - Aguardando estabilização...")
+        task.wait(6) -- Delay importante para evitar avançar rápido demais
         joinNextServer()
     end
 end)
 
 -- Início
 if game.PlaceId == HUB_PLACE_ID then
-    sendToDiscord("🚀 **HUB SCANNER INICIADO** | Total: " .. #SERVERS)
-    task.wait(8)
+    sendToDiscord("🚀 **HUB SCANNER INICIADO** | Total de servidores: " .. #SERVERS)
+    task.wait(10)
     joinNextServer()
 else
-    warn("Execute no Hub!")
+    warn("Execute este script **no Hub**!")
 end
