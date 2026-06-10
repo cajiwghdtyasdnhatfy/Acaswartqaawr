@@ -1,4 +1,4 @@
--- === HUB CONTROLLER DEFINITIVO (SEM SPAM E COM .TXT) ===
+-- === HUB CONTROLLER DEFINITIVO (CORREÇÃO: FILE DOES NOT EXIST) ===
 local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
@@ -15,6 +15,15 @@ end)
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1514031008654295040/efj6sTrpu2HRERFEALNMWpgsCAT0b_7V_S4oFrwclE9rkcfQ8si3EfSpaZ3rNTTnAzVq"
 local HUB_PLACE_ID = 15327728308
 local FILE_NAME = "ServidoresVisitados.txt"
+
+-- ---------------------------------------------------------
+-- FIX: GARANTE QUE O ARQUIVO EXISTA PARA NÃO DAR ERRO
+if isfile and writefile then
+    if not isfile(FILE_NAME) then
+        writefile(FILE_NAME, "")
+    end
+end
+-- ---------------------------------------------------------
 
 local SERVERS = {
     "Abyss", "Aftermath", "Alpha", "Anarchy", "Armageddon", "Banshee", "Blight", "Bravo",
@@ -85,7 +94,10 @@ local function joinNextServer()
         appendfile(FILE_NAME, serverName .. "\n")
     elseif writefile then
         -- Fallback caso o executor não suporte appendfile
-        local currentData = isfile(FILE_NAME) and readfile(FILE_NAME) or ""
+        local currentData = ""
+        if isfile and isfile(FILE_NAME) then
+            currentData = readfile(FILE_NAME)
+        end
         writefile(FILE_NAME, currentData .. serverName .. "\n")
     end
 
