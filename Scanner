@@ -28,14 +28,14 @@ local function sendToDiscord(msg)
 end
 
 
-task.wait(2)
+task.wait(1)
 
 local found = {}
 
 for _, player in ipairs(Players:GetPlayers()) do
     if player == Players.LocalPlayer then continue end
 
-    local inv = player:WaitForChild("GunInventory", 3)
+    local inv = player:WaitForChild("GunInventory", 1)
     if inv then
         for _, obj in ipairs(inv:GetChildren()) do
             if obj:IsA("ObjectValue") and obj.Value then
@@ -65,7 +65,7 @@ else
 end
 
 
-task.wait(3)
+task.wait(1)
 local qt = queue_on_teleport or queueteleport or (syn and syn.queue_on_teleport)
 if qt then
     qt([[loadstring(game:HttpGet("https://raw.githubusercontent.com/cajiwghdtyasdnhatfy/Acaswartqaawr/refs/heads/main/Hub"))()]])
