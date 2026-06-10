@@ -64,7 +64,7 @@ end
 if #found > 0 then
     sendToDiscord("TOTAL: " .. #found .. ")
 else
-    sendToDiscord("Nada encontrado")
+    sendToDiscord("Nothing")
 end
 
 
