@@ -1,7 +1,17 @@
--- HUB CONTROLLER - LOOP AFK (VERSÃO CORRIGIDA)
+-- === HUB CONTROLLER - VERSÃO ESTÁVEL ===
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
-local Library = require(game.ReplicatedStorage:WaitForChild("Library"))
+
+-- Espera o Library carregar
+local Library = nil
+local success, err = pcall(function()
+    Library = require(game.ReplicatedStorage:WaitForChild("Library", 10))
+end)
+if not success or not Library then
+    warn("[Hub] Library não encontrado! Tentando novamente...")
+    task.wait(5)
+    Library = require(game.ReplicatedStorage:WaitForChild("Library"))
+end
 
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1514031008654295040/efj6sTrpu2HRERFEALNMWpgsCAT0b_7V_S4oFrwclE9rkcfQ8si3EfSpaZ3rNTTnAzVq"
 local HUB_PLACE_ID = 15327728308
@@ -41,44 +51,47 @@ end
 local function joinNextServer()
     if not scanningActive then return end
     if currentIndex > #SERVERS then
-        sendToDiscord("✅ **SCAN FINALIZADO** - Todos os servidores escaneados!")
+        sendToDiscord("✅ **SCAN FINALIZADO**")
         scanningActive = false
         return
     end
 
     local serverName = SERVERS[currentIndex]
     currentIndex += 1
-
     if scanned[serverName] then return joinNextServer() end
     scanned[serverName] = true
 
     print("[Hub] Entrando em: " .. serverName)
     sendToDiscord("🔄 **Entrando em:** " .. serverName .. " (" .. (currentIndex-1) .. "/" .. #SERVERS .. ")")
 
-    Library.Network:Fire("Player.JoinServer", serverName)
+    if Library and Library.Network then
+        Library.Network:Fire("Player.JoinServer", serverName)
+    else
+        warn("[Hub] Library.Network não encontrado!")
+    end
 end
 
--- Persistência: Sempre que teleportar, roda o Scanner (só fora do Hub)
+-- Queue
 local qt = queue_on_teleport or queueteleport or (syn and syn.queue_on_teleport)
 if qt then
     qt([[if game.PlaceId ~= 15327728308 then loadstring(game:HttpGet("https://raw.githubusercontent.com/cajiwghdtyasdnhatfy/Acaswartqaawr/refs/heads/main/Scanner"))() end]])
 end
 
--- Detecta retorno ao Hub
+-- Detecta retorno
 Players.LocalPlayer.OnTeleport:Connect(function()
     task.wait(6)
     if game.PlaceId == HUB_PLACE_ID then
-        print("[Hub] Retornou ao Hub! Iniciando próximo...")
-        task.wait(3)
+        print("[Hub] Retornou ao Hub!")
+        task.wait(4)
         joinNextServer()
     end
 end)
 
 -- Início
 if game.PlaceId == HUB_PLACE_ID then
-    sendToDiscord("🚀 **HUB SCANNER INICIADO** | Total de servidores: " .. #SERVERS)
-    task.wait(6)
+    sendToDiscord("🚀 **HUB SCANNER INICIADO** | Total: " .. #SERVERS)
+    task.wait(8)
     joinNextServer()
 else
-    print("Execute este script **no Hub**!")
+    warn("Execute no Hub!")
 end
