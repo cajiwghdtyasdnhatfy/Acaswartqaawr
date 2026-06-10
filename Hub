@@ -1,10 +1,10 @@
--- === HUB CONTROLLER DEFINITIVO (SEM BUG DE ONTELEPORT) ===
+-- === HUB CONTROLLER DEFINITIVO (SEM SPAM E COM .TXT) ===
 local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
 
--- Aguarda o LocalPlayer carregar para evitar qualquer erro de "nil"
+-- Aguarda o LocalPlayer carregar
 local LocalPlayer = Players.LocalPlayer or Players:GetPropertyChangedSignal("LocalPlayer"):Wait()
 
 local Library = nil
@@ -14,6 +14,7 @@ end)
 
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1514031008654295040/efj6sTrpu2HRERFEALNMWpgsCAT0b_7V_S4oFrwclE9rkcfQ8si3EfSpaZ3rNTTnAzVq"
 local HUB_PLACE_ID = 15327728308
+local FILE_NAME = "ServidoresVisitados.txt"
 
 local SERVERS = {
     "Abyss", "Aftermath", "Alpha", "Anarchy", "Armageddon", "Banshee", "Blight", "Bravo",
@@ -31,6 +32,14 @@ local scanned = {}
 local currentIndex = 1
 local isProcessing = false
 local hasStarted = false
+
+-- Carrega o histórico do .txt (se existir)
+if isfile and isfile(FILE_NAME) then
+    local content = readfile(FILE_NAME)
+    for serverName in content:gmatch("[^\r\n]+") do
+        scanned[serverName] = true
+    end
+end
 
 local function sendToDiscord(msg)
     local req = syn and syn.request or http_request or request
@@ -52,9 +61,10 @@ local function joinNextServer()
 
     -- Verifica se já passou por todos os servidores da lista
     if currentIndex > #SERVERS then
-        sendToDiscord("🔄 **Ciclo finalizado** - Reiniciando histórico de servidores...")
         currentIndex = 1
-        scanned = {} -- Limpa a memória para recomeçar
+        scanned = {}
+        -- Limpa o arquivo TXT ao reiniciar o ciclo
+        if writefile then writefile(FILE_NAME, "") end
         isProcessing = false
         task.wait(5)
         return joinNextServer()
@@ -69,9 +79,17 @@ local function joinNextServer()
         return joinNextServer() 
     end
 
-    -- Marca como visitado
+    -- Marca como visitado e salva no TXT
     scanned[serverName] = true
+    if appendfile then
+        appendfile(FILE_NAME, serverName .. "\n")
+    elseif writefile then
+        -- Fallback caso o executor não suporte appendfile
+        local currentData = isfile(FILE_NAME) and readfile(FILE_NAME) or ""
+        writefile(FILE_NAME, currentData .. serverName .. "\n")
+    end
 
+    -- Só manda o nome do servidor pro Discord
     sendToDiscord("Server: " .. serverName)
 
     if Library and Library.Network then
@@ -82,7 +100,7 @@ local function joinNextServer()
     isProcessing = false
 end
 
--- Detecção de Falhas (Se o servidor estiver cheio, pula na hora)
+-- Detecção de Falhas
 TeleportService.TeleportInitFailed:Connect(function(player, result, errorMessage)
     if errorMessage and string.find(string.lower(errorMessage), "full") then
         task.wait(1)
@@ -91,18 +109,15 @@ TeleportService.TeleportInitFailed:Connect(function(player, result, errorMessage
     end
 end)
 
--- Queue: Executa o Scanner automaticamente assim que teleportar pro server do jogo
 local qt = queue_on_teleport or queueteleport or (syn and syn.queue_on_teleport)
 if qt then
     qt([[loadstring(game:HttpGet("https://raw.githubusercontent.com/cajiwghdtyasdnhatfy/Acaswartqaawr/refs/heads/main/Scanner"))()]])
 end
 
--- Monitoramento Seguro (Substitui o OnTeleport bugado)
 RunService.Heartbeat:Connect(function()
     if game.PlaceId == HUB_PLACE_ID and not hasStarted then
         hasStarted = true
         task.wait(5)
-        sendToDiscord("🚀 **HUB INICIADO** | Total de servidores: " .. #SERVERS)
         joinNextServer()
     end
 end)
