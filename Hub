@@ -1,16 +1,18 @@
--- === HUB CONTROLLER - VERSÃO ESTÁVEL + ANTI-ERRO ===
+-- === HUB CONTROLLER - VERSÃO ULTRA ESTÁVEL (Sem erro OnTeleport) ===
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 
--- Espera o LocalPlayer carregar
+-- Espera tudo carregar corretamente
 local LocalPlayer = Players.LocalPlayer
 if not LocalPlayer then
     LocalPlayer = Players:GetPropertyChangedSignal("LocalPlayer"):Wait()
 end
 
+task.wait(5) -- Dá tempo para o personagem e serviços carregarem
+
 local Library = nil
 pcall(function()
-    Library = require(game.ReplicatedStorage:WaitForChild("Library", 20))
+    Library = require(game.ReplicatedStorage:WaitForChild("Library", 25))
 end)
 
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1514031008654295040/efj6sTrpu2HRERFEALNMWpgsCAT0b_7V_S4oFrwclE9rkcfQ8si3EfSpaZ3rNTTnAzVq"
@@ -55,7 +57,7 @@ local function joinNextServer()
         sendToDiscord("🔄 **Ciclo completo** - Reiniciando do início...")
         currentIndex = 1
         scanned = {}
-        task.wait(8)
+        task.wait(10)
         isProcessing = false
         return joinNextServer()
     end
@@ -87,17 +89,24 @@ if qt then
     qt([[if game.PlaceId ~= 15327728308 then loadstring(game:HttpGet("https://raw.githubusercontent.com/cajiwghdtyasdnhatfy/Acaswartqaawr/refs/heads/main/Scanner"))() end]])
 end
 
--- Detecta retorno ao Hub (com proteção)
-if LocalPlayer then
-    LocalPlayer.OnTeleport:Connect(function()
-        task.wait(10) -- Mais tempo para carregar
-        if game.PlaceId == HUB_PLACE_ID then
-            print("[Hub] Retornou ao Hub - Aguardando estabilização...")
-            task.wait(8) -- Delay maior para não ir rápido demais
-            joinNextServer()
+-- Detecta retorno ao Hub (com proteção extra)
+task.spawn(function()
+    while true do
+        if LocalPlayer and game.PlaceId == HUB_PLACE_ID then
+            -- Usa um loop simples como backup
+            LocalPlayer:GetPropertyChangedSignal("Character"):Connect(function()
+                task.wait(12)
+                if game.PlaceId == HUB_PLACE_ID then
+                    print("[Hub] Detectado retorno - Indo pro próximo servidor...")
+                    task.wait(8)
+                    joinNextServer()
+                end
+            end)
+            break
         end
-    end)
-end
+        task.wait(2)
+    end
+end)
 
 -- Início
 if game.PlaceId == HUB_PLACE_ID then
