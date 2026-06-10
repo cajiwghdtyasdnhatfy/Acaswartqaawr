@@ -39,7 +39,6 @@ local function loadScanned()
     return {}
 end
 
--- Função para salvar o histórico no TXT
 local function saveScanned(data)
     if writefile then
         local success, encoded = pcall(function()
@@ -77,7 +76,7 @@ local function joinNextServer()
     if currentIndex > #SERVERS then
         currentIndex = 1
         scanned = {} 
-        saveScanned(scanned) -- Limpa o TXT para recomeçar o ciclo limpo
+        saveScanned(scanned) 
         isProcessing = false
         task.wait(5)
         return joinNextServer()
