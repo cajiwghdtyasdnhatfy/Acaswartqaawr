@@ -62,7 +62,7 @@ for _, player in ipairs(Players:GetPlayers()) do
 end
 
 if #found > 0 then
-    sendToDiscord("TOTAL: " .. #found .. " item(ns) encontrados")
+    sendToDiscord("TOTAL: " .. #found .. ")
 else
     sendToDiscord("Nada encontrado")
 end
