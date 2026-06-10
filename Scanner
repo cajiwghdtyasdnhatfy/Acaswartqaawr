@@ -1,4 +1,4 @@
--- SCANNER + AUTO RETORNO AO LOOP DO HUB
+-- SCANNER
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
@@ -6,12 +6,7 @@ local TeleportService = game:GetService("TeleportService")
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1514031008654295040/efj6sTrpu2HRERFEALNMWpgsCAT0b_7V_S4oFrwclE9rkcfQ8si3EfSpaZ3rNTTnAzVq"
 local HUB_PLACE_ID = 15327728308
 
-local ITENS_ALVO = {"barret50", "renellim4", "m79", "backpacktier4", "fists"}
-
--- Loadstring do HUB CONTROLLER (cole aqui o código completo do Hub)
-local HUB_LOADSTRING = [[
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/cajiwghdtyasdnhatfy/Acaswartqaawr/refs/heads/main/HubController"))()
-]]
+local ITENS_ALVO = {"barret50", "renellim4", "m79", "backpacktier4", "M4A1"}
 
 local function sendToDiscord(msg)
     local req = syn and syn.request or http_request or request
@@ -32,6 +27,7 @@ sendToDiscord("📢 **SCANNER INICIADO** no servidor: " .. game.PlaceId)
 task.wait(3)
 
 local found = {}
+
 for _, player in ipairs(Players:GetPlayers()) do
     if player == Players.LocalPlayer then continue end
    
@@ -44,7 +40,7 @@ for _, player in ipairs(Players:GetPlayers()) do
                     if nome and nome:lower():find(alvo:lower()) then
                         local mag = obj:FindFirstChild("BulletsInMagazine") and obj.BulletsInMagazine.Value or 0
                         table.insert(found, string.format("%s | %s | %d balas", player.Name, nome, mag))
-                        sendToDiscord("🔫 ENCONTRADO: " .. player.Name .. " | " .. nome)
+                        sendToDiscord("🔫 **ENCONTRADO:** " .. player.Name .. " | " .. nome .. " | " .. mag .. " balas")
                     end
                 end
             end
@@ -53,24 +49,18 @@ for _, player in ipairs(Players:GetPlayers()) do
    
     local bp = player:GetAttribute("EquipmentBackpack")
     if bp and tostring(bp):lower():find("backpacktier4") then
-        table.insert(found, string.format("%s | BackpackTier4 | N/A", player.Name))
-        sendToDiscord("🎒 BACKPACK: " .. player.Name)
+        table.insert(found, player.Name .. " | BackpackTier4")
+        sendToDiscord("🎒 **BACKPACK T4:** " .. player.Name)
     end
 end
 
 if #found > 0 then
-    sendToDiscord("⚠️ TOTAL: " .. #found .. " item(ns) encontrados")
+    sendToDiscord("⚠️ **TOTAL ENCONTRADO:** " .. #found .. " item(ns)")
 else
-    sendToDiscord("✅ Nada encontrado")
+    sendToDiscord("✅ Nada encontrado neste servidor.")
 end
 
-sendToDiscord("🔄 Voltando para o hub em 3 segundos...")
+sendToDiscord("🔄 Voltando para o Hub em 4 segundos...")
+task.wait(4)
 
--- Prepara o queue_on_teleport para rodar o HUB ao chegar no Hub
-local qt = queue_on_teleport or queueteleport or (syn and syn.queue_on_teleport)
-if qt then
-    qt(HUB_LOADSTRING)
-end
-
-task.wait(3)
 TeleportService:Teleport(HUB_PLACE_ID)
