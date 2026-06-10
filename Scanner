@@ -1,4 +1,4 @@
--- SCANNER COM TRAVA DE CARREGAMENTO
+
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
@@ -8,7 +8,7 @@ local HUB_PLACE_ID = 15327728308
 
 local ITENS_ALVO = {"barret50", "renellim4", "m79", "backpacktier4","m4a1"}
 
--- TRAVA 1: Só continua se o jogo já estiver totalmente carregado na sua tela
+
 if not game:IsLoaded() then
     game.Loaded:Wait()
 end
@@ -27,10 +27,8 @@ local function sendToDiscord(msg)
     end
 end
 
--- AVISA QUE O SCANNER INICIOU
 
--- TRAVA 2: Espera 8 segundos para dar tempo do Roblox baixar os inventários dos outros jogadores
-task.wait(8)
+task.wait(2)
 
 local found = {}
 
@@ -57,12 +55,12 @@ for _, player in ipairs(Players:GetPlayers()) do
     local bp = player:GetAttribute("EquipmentBackpack")
     if bp and tostring(bp):lower():find("backpacktier4") then
         table.insert(found, string.format("%s | BackpackTier4 | N/A", player.Name))
-        sendToDiscord("BACKPACK: " .. player.Name)
+        sendToDiscord("Tier4: " .. player.Name)
     end
 end
 
 if #found > 0 then
-    sendToDiscord("TOTAL: " .. #found .. ")
+    sendToDiscord("TOTAL: " .. #found)
 else
     sendToDiscord("Nothing")
 end
