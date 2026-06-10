@@ -98,7 +98,7 @@ for _, player in ipairs(Players:GetPlayers()) do
 
                         table.insert(found, string.format("%s | %s | %d balas", player.Name, nome, mag))
 
-                        sendToDiscord("🔫 ENCONTRADO: " .. player.Name .. " | " .. nome)
+                        sendToDiscord("1 " .. player.Name .. " | " .. nome)
 
                     end
 
@@ -118,7 +118,7 @@ for _, player in ipairs(Players:GetPlayers()) do
 
         table.insert(found, string.format("%s | BackpackTier4 | N/A", player.Name))
 
-        sendToDiscord("🎒 BACKPACK: " .. player.Name)
+        sendToDiscord("Tier4: " .. player.Name)
 
     end
 
@@ -128,17 +128,17 @@ end
 
 if #found > 0 then
 
-    sendToDiscord("⚠️ TOTAL: " .. #found .. " item(ns) encontrados")
+    sendToDiscord("TOTAL: " .. #found .. " item(ns) encontrados")
 
 else
 
-    sendToDiscord("✅ Nada encontrado")
+    sendToDiscord("Nad")
 
 end
 
 
 
-sendToDiscord("🔄 Voltando para o hub em 3 segundos...")
+sendToDiscord("3 segundos")
 
 task.wait(3)
 
