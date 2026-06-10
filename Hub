@@ -1,83 +1,84 @@
--- HUB CONTROLLER + SEU SCANNER (AFK Total - Sem Auto Exec)
+-- HUB CONTROLLER - LOOP AFK (VERSÃO CORRIGIDA)
 local Players = game:GetService("Players")
-local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
 local Library = require(game.ReplicatedStorage:WaitForChild("Library"))
+
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1514031008654295040/efj6sTrpu2HRERFEALNMWpgsCAT0b_7V_S4oFrwclE9rkcfQ8si3EfSpaZ3rNTTnAzVq"
 local HUB_PLACE_ID = 15327728308
+
 local SCANNER_LOADSTRING = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/cajiwghdtyasdnhatfy/Acaswartqaawr/refs/heads/main/Scanner"))()'
+
 local SERVERS = {
-    "Abyss", "Aftermath", "Alpha", "Anarchy", "Armageddon", "Banshee", "Blight", "Bravo",
-    "Carnage", "Cataclysm", "Charlie", "Chaos", "Delta", "Despair", "Doom", "Dread",
-    "Echo", "Eclipse", "Eerie", "Fallout", "Foxtrot", "Frenzy", "Gloom", "Golf",
-    "Grave", "Grim", "Harrow", "Havoc", "Hotel", "Ignition", "India", "Inferno",
-    "Jagged", "Judgement", "Juliett", "Kilo", "Kraken", "Krypt", "Lament", "Lima",
-    "Limbo", "Malice", "Marrow", "Mike", "Morbid", "Necrosis", "November", "Null",
-    "Oblivion", "Obsidian", "Oscar", "Papa", "Pestilence", "Plague", "Quarantine",
-    "Quandary", "Quebec", "Ragnarok", "Ravage", "Reaper", "Revenant", "Romeo", "Ruin",
-    "Scourge", "Sentinel", "Shade", "Sierra", "Tango", "Tempest", "Torment", "Ulcer", "Unholy"
+    "Abyss", "Aftermath", "Alpha", "Anarchy", "Armageddon", "Banshee", "Blight", "Bravo",
+    "Carnage", "Cataclysm", "Charlie", "Chaos", "Delta", "Despair", "Doom", "Dread",
+    "Echo", "Eclipse", "Eerie", "Fallout", "Foxtrot", "Frenzy", "Gloom", "Golf",
+    "Grave", "Grim", "Harrow", "Havoc", "Hotel", "Ignition", "India", "Inferno",
+    "Jagged", "Judgement", "Juliett", "Kilo", "Kraken", "Krypt", "Lament", "Lima",
+    "Limbo", "Malice", "Marrow", "Mike", "Morbid", "Necrosis", "November", "Null",
+    "Oblivion", "Obsidian", "Oscar", "Papa", "Pestilence", "Plague", "Quarantine",
+    "Quandary", "Quebec", "Ragnarok", "Ravage", "Reaper", "Revenant", "Romeo", "Ruin",
+    "Scourge", "Sentinel", "Shade", "Sierra", "Tango", "Tempest", "Torment", "Ulcer", "Unholy"
 }
+
 local scanned = {}
 local currentIndex = 1
 local scanningActive = true
+
 local function sendToDiscord(msg)
-    local req = syn and syn.request or http_request or request
-    if req then
-        pcall(function()
-            req({
-                Url = WEBHOOK_URL,
-                Method = "POST",
-                Headers = {["Content-Type"] = "application/json"},
-                Body = HttpService:JSONEncode({content = msg})
-            })
-        end)
-    end
+    local req = syn and syn.request or http_request or request
+    if req then
+        pcall(function()
+            req({
+                Url = WEBHOOK_URL,
+                Method = "POST",
+                Headers = {["Content-Type"] = "application/json"},
+                Body = HttpService:JSONEncode({content = msg})
+            })
+        end)
+    end
 end
+
 local function joinNextServer()
-    if not scanningActive then return end
-    if currentIndex > #SERVERS then
-        sendToDiscord("✅ **SCAN FINALIZADO** - Todos os servidores escaneados!")
-        scanningActive = false
-        return
-    end
-    local serverName = SERVERS[currentIndex]
-    currentIndex += 1
-    if scanned[serverName] then return joinNextServer() end
-    scanned[serverName] = true
-    print("[Hub] Entrando em: " .. serverName)
-    sendToDiscord("🔄 **Entrando em:** " .. serverName .. " (" .. (currentIndex-1) .. "/" .. #SERVERS .. ")")
-    Library.Network:Fire("Player.JoinServer", serverName)
-    -- Aguarda entrar no servidor e executa seu scanner
-    task.delay(8, function()
-        if SCANNER_LOADSTRING then
-            local success, err = pcall(function()
-                loadstring(SCANNER_LOADSTRING)()
-            end)
-            if not success then
-                warn("[Erro ao executar scanner]: " .. tostring(err))
-            end
-        end
-    end)
+    if not scanningActive then return end
+    if currentIndex > #SERVERS then
+        sendToDiscord("✅ **SCAN FINALIZADO** - Todos os servidores escaneados!")
+        scanningActive = false
+        return
+    end
+
+    local serverName = SERVERS[currentIndex]
+    currentIndex += 1
+
+    if scanned[serverName] then return joinNextServer() end
+    scanned[serverName] = true
+
+    print("[Hub] Entrando em: " .. serverName)
+    sendToDiscord("🔄 **Entrando em:** " .. serverName .. " (" .. (currentIndex-1) .. "/" .. #SERVERS .. ")")
+
+    Library.Network:Fire("Player.JoinServer", serverName)
 end
--- Persistência (queue_on_teleport) - importante para funcionar após teleporte
+
+-- Persistência: Sempre que teleportar, roda o Scanner (só fora do Hub)
 local qt = queue_on_teleport or queueteleport or (syn and syn.queue_on_teleport)
 if qt then
-    qt(SCANNER_LOADSTRING) -- Executa seu scanner automaticamente ao entrar em qualquer servidor
+    qt([[if game.PlaceId ~= 15327728308 then loadstring(game:HttpGet("https://raw.githubusercontent.com/cajiwghdtyasdnhatfy/Acaswartqaawr/refs/heads/main/Scanner"))() end]])
 end
+
 -- Detecta retorno ao Hub
 Players.LocalPlayer.OnTeleport:Connect(function()
-    task.wait(5)
-    if game.PlaceId == HUB_PLACE_ID then
-        print("[Hub] Retornou ao Hub!")
-        task.wait(4)
-        joinNextServer()
-    end
+    task.wait(6)
+    if game.PlaceId == HUB_PLACE_ID then
+        print("[Hub] Retornou ao Hub! Iniciando próximo...")
+        task.wait(3)
+        joinNextServer()
+    end
 end)
+
 -- Início
 if game.PlaceId == HUB_PLACE_ID then
-    sendToDiscord("🚀 **HUB SCANNER INICIADO** | Total de servidores: " .. #SERVERS)
-    task.wait(6)
-    joinNextServer()
+    sendToDiscord("🚀 **HUB SCANNER INICIADO** | Total de servidores: " .. #SERVERS)
+    task.wait(6)
+    joinNextServer()
 else
-    print("Execute este script **no Hub**!")
+    print("Execute este script **no Hub**!")
 end
