@@ -10,7 +10,7 @@ local ITENS_ALVO = {"barret50", "renellim4", "m79", "backpacktier4", "fists"}
 
 -- Loadstring do HUB CONTROLLER (cole aqui o código completo do Hub)
 local HUB_LOADSTRING = [[
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/cajiwghdtyasdnhatfy/Acaswartqaawr/refs/heads/main/HubController"))()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/cajiwghdtyasdnhatfy/Acaswartqaawr/refs/heads/main/Hub"))()
 ]]
 
 local function sendToDiscord(msg)
