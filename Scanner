@@ -1,4 +1,4 @@
--- SCANNER + FECHA O LOOP
+-- === SCANNER MELHORADO - MENSAGENS BONITAS ===
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
@@ -6,7 +6,7 @@ local TeleportService = game:GetService("TeleportService")
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1514031008654295040/efj6sTrpu2HRERFEALNMWpgsCAT0b_7V_S4oFrwclE9rkcfQ8si3EfSpaZ3rNTTnAzVq"
 local HUB_PLACE_ID = 15327728308
 
-local ITENS_ALVO = {"barret50", "renellim4", "m79", "backpacktier4","fists"}
+local ITENS_ALVO = {"barret50", "renellim4", "m79", "backpacktier4", "fists"}
 
 local function sendToDiscord(msg)
     local req = syn and syn.request or http_request or request
@@ -22,13 +22,16 @@ local function sendToDiscord(msg)
     end
 end
 
-sendToDiscord("📢 **SCANNER INICIADO** no servidor: " .. game.PlaceId)
+sendToDiscord("📡 **SCANNER INICIADO** | Servidor: `" .. game.PlaceId .. "`")
 task.wait(3)
 
 local found = {}
+local totalItens = 0
+
 for _, player in ipairs(Players:GetPlayers()) do
     if player == Players.LocalPlayer then continue end
-   
+
+    -- Gun Inventory
     local inv = player:FindFirstChild("GunInventory")
     if inv then
         for _, obj in ipairs(inv:GetChildren()) do
@@ -37,34 +40,36 @@ for _, player in ipairs(Players:GetPlayers()) do
                 for _, alvo in ipairs(ITENS_ALVO) do
                     if nome and nome:lower():find(alvo:lower()) then
                         local mag = obj:FindFirstChild("BulletsInMagazine") and obj.BulletsInMagazine.Value or 0
-                        table.insert(found, string.format("%s | %s | %d balas", player.Name, nome, mag))
-                        sendToDiscord("🔫 ENCONTRADO: " .. player.Name .. " | " .. nome)
+                        table.insert(found, "**" .. player.Name .. "** | `" .. nome .. "` | " .. mag .. " balas")
+                        totalItens += 1
                     end
                 end
             end
         end
     end
-   
+
+    -- Backpack T4
     local bp = player:GetAttribute("EquipmentBackpack")
     if bp and tostring(bp):lower():find("backpacktier4") then
-        table.insert(found, string.format("%s | BackpackTier4 | N/A", player.Name))
-        sendToDiscord("🎒 BACKPACK: " .. player.Name)
+        table.insert(found, "**" .. player.Name .. "** | `BackpackTier4`")
+        totalItens += 1
     end
 end
 
-if #found > 0 then
-    sendToDiscord("⚠️ TOTAL: " .. #found .. " item(ns) encontrados")
+-- Resumo bonito
+if totalItens > 0 then
+    sendToDiscord("⚠️ **ITENS ENCONTRADOS** (" .. totalItens .. ")\n" .. table.concat(found, "\n"))
 else
-    sendToDiscord("✅ Nada encontrado")
+    sendToDiscord("✅ **Nenhum item alvo encontrado** neste servidor.")
 end
 
-sendToDiscord("🔄 Voltando para o hub...")
+sendToDiscord("🔄 **Voltando para o Hub...**")
 
--- === IMPORTANTE: Fecha o loop ===
+-- Fecha o loop
 local qt = queue_on_teleport or queueteleport or (syn and syn.queue_on_teleport)
 if qt then
     qt('loadstring(game:HttpGet("https://raw.githubusercontent.com/cajiwghdtyasdnhatfy/Acaswartqaawr/refs/heads/main/Hub"))()')
 end
 
-task.wait(3)
+task.wait(4)
 TeleportService:Teleport(HUB_PLACE_ID)
