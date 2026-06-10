@@ -1,3 +1,4 @@
+-- SCANNER + FECHA O LOOP
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
@@ -5,12 +6,7 @@ local TeleportService = game:GetService("TeleportService")
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1514031008654295040/efj6sTrpu2HRERFEALNMWpgsCAT0b_7V_S4oFrwclE9rkcfQ8si3EfSpaZ3rNTTnAzVq"
 local HUB_PLACE_ID = 15327728308
 
-local ITENS_ALVO = {"barret50", "renellim4", "m79", "backpacktier4", "fists"}
-
--- Loadstring do HUB CONTROLLER (cole aqui o código completo do Hub)
-local HUB_LOADSTRING = [[
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/cajiwghdtyasdnhatfy/Acaswartqaawr/refs/heads/main/Hub"))()
-]]
+local ITENS_ALVO = {"barret50", "renellim4", "m79", "backpacktier4","fists"}
 
 local function sendToDiscord(msg)
     local req = syn and syn.request or http_request or request
@@ -27,7 +23,6 @@ local function sendToDiscord(msg)
 end
 
 sendToDiscord("📢 **SCANNER INICIADO** no servidor: " .. game.PlaceId)
-
 task.wait(3)
 
 local found = {}
@@ -63,12 +58,12 @@ else
     sendToDiscord("✅ Nada encontrado")
 end
 
-sendToDiscord("🔄 Voltando para o hub em 3 segundos...")
+sendToDiscord("🔄 Voltando para o hub...")
 
--- Prepara o queue_on_teleport para rodar o HUB ao chegar no Hub
+-- === IMPORTANTE: Fecha o loop ===
 local qt = queue_on_teleport or queueteleport or (syn and syn.queue_on_teleport)
 if qt then
-    qt(HUB_LOADSTRING)
+    qt('loadstring(game:HttpGet("https://raw.githubusercontent.com/cajiwghdtyasdnhatfy/Acaswartqaawr/refs/heads/main/Hub"))()')
 end
 
 task.wait(3)
