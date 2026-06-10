@@ -1,4 +1,4 @@
--- SCANNER CORRETO para o GitHub
+-- SCANNER COM TRAVA DE CARREGAMENTO
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
@@ -7,6 +7,11 @@ local WEBHOOK_URL = "https://discord.com/api/webhooks/1514031008654295040/efj6sT
 local HUB_PLACE_ID = 15327728308
 
 local ITENS_ALVO = {"barret50", "renellim4", "m79", "backpacktier4","fists"}
+
+-- TRAVA 1: Só continua se o jogo já estiver totalmente carregado na sua tela
+if not game:IsLoaded() then
+    game.Loaded:Wait()
+end
 
 local function sendToDiscord(msg)
     local req = syn and syn.request or http_request or request
@@ -23,16 +28,18 @@ local function sendToDiscord(msg)
 end
 
 -- AVISA QUE O SCANNER INICIOU
-sendToDiscord("📢 SCANNER INICIADO no servidor: " .. game.PlaceId)
+sendToDiscord("📢 SCANNER INICIADO no servidor: " .. game.PlaceId .. " | Aguardando inventários...")
 
-task.wait(3)
+-- TRAVA 2: Espera 8 segundos para dar tempo do Roblox baixar os inventários dos outros jogadores
+task.wait(8)
 
 local found = {}
 
 for _, player in ipairs(Players:GetPlayers()) do
     if player == Players.LocalPlayer then continue end
    
-    local inv = player:FindFirstChild("GunInventory")
+    -- TRAVA 3: Espera até 3 segundos para ver se a pasta de armas do cara aparece
+    local inv = player:WaitForChild("GunInventory", 3)
     if inv then
         for _, obj in ipairs(inv:GetChildren()) do
             if obj:IsA("ObjectValue") and obj.Value then
