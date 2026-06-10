@@ -1,17 +1,15 @@
--- === HUB CONTROLLER DEFINITIVO (COM TXT NO WORKSPACE) ===
 local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
 
--- Aguarda o LocalPlayer carregar para evitar qualquer erro de "nil"
 local LocalPlayer = Players.LocalPlayer or Players:GetPropertyChangedSignal("LocalPlayer"):Wait()
 local Library = nil
 pcall(function()
     Library = require(game.ReplicatedStorage:WaitForChild("Library", 15))
 end)
 
-local WEBHOOK_URL = "https://discord.com/api/webhooks/1514078515279040643/DqqGWCbW3Zy_aZ2wUBK3iUTK1zkuHJD9EeCNbbSOpT84Dz6DRiKdEbIhAA_o1RvzOevs"
+local WEBHOOK_URL = "https://discord.com/api/webhooks/1514220538904580147/Plw4co_JKKE28LHt5UcQwsAkAOlzNB0Vq2biXgm1ycp7w1dJE3yoczk4lvTygfrXXR8Y"
 local HUB_PLACE_ID = 15327728308
 
 local SERVERS = {
@@ -28,7 +26,6 @@ local SERVERS = {
 
 local FILENAME = "scanned_servers.txt"
 
--- Função para carregar o histórico de servidores do TXT
 local function loadScanned()
     if isfile and isfile(FILENAME) then
         local data = readfile(FILENAME)
@@ -54,7 +51,6 @@ local function saveScanned(data)
     end
 end
 
--- Carrega a lista salva no workspace do executor
 local scanned = loadScanned()
 local currentIndex = 1
 local isProcessing = false
@@ -78,7 +74,6 @@ local function joinNextServer()
     if isProcessing then return end
     isProcessing = true
 
-    -- Verifica se já passou por todos os servidores da lista
     if currentIndex > #SERVERS then
         currentIndex = 1
         scanned = {} 
@@ -91,13 +86,11 @@ local function joinNextServer()
     local serverName = SERVERS[currentIndex]
     currentIndex += 1
 
-    -- Se já escaneou (verificado pelo TXT carregado), pula silenciosamente
     if scanned[serverName] then
         isProcessing = false
         return joinNextServer()
     end
 
-    -- Marca como visitado e já atualiza o arquivo TXT antes do teleporte
     scanned[serverName] = true
     saveScanned(scanned)
 
@@ -111,7 +104,6 @@ local function joinNextServer()
     isProcessing = false
 end
 
--- Detecção de Falhas (Se o servidor estiver cheio, pula na hora)
 TeleportService.TeleportInitFailed:Connect(function(player, result, errorMessage)
     if errorMessage and string.find(string.lower(errorMessage), "full") then
         task.wait(1)
@@ -120,13 +112,11 @@ TeleportService.TeleportInitFailed:Connect(function(player, result, errorMessage
     end
 end)
 
--- Queue: Executa o Scanner automaticamente assim que teleportar pro server do jogo
 local qt = queue_on_teleport or queueteleport or (syn and syn.queue_on_teleport)
 if qt then
     qt([[loadstring(game:HttpGet("https://raw.githubusercontent.com/cajiwghdtyasdnhatfy/Acaswartqaawr/refs/heads/main/Scanner"))()]])
 end
 
--- Monitoramento Seguro (Substitui o OnTeleport bugado)
 RunService.Heartbeat:Connect(function()
     if game.PlaceId == HUB_PLACE_ID and not hasStarted then
         hasStarted = true
