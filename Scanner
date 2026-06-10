@@ -14,7 +14,7 @@ local HUB_PLACE_ID = 15327728308
 
 
 
-local ITENS_ALVO = {"barret50", "renellim4", "m79", "backpacktier4",}
+local ITENS_ALVO = {"barret50", "renellim4", "m79", "backpacktier4","fists"}
 
 
 
