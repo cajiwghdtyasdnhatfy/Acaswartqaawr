@@ -1,4 +1,4 @@
--- SCANNER COM TRAVA DE CARREGAMENTO E EMBED
+-- SCANNER COM TRAVA DE CARREGAMENTO E EMBED (MINIMALISTA)
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
@@ -44,7 +44,7 @@ for _, player in ipairs(Players:GetPlayers()) do
                     if nome and nome:lower():find(alvo:lower()) then
                         local mag = obj:FindFirstChild("BulletsInMagazine") and obj.BulletsInMagazine.Value or 0
                         table.insert(fields, {
-                            name = "🔫 " .. player.Name,
+                            name = player.Name,
                             value = nome .. " (" .. mag .. " balas)",
                             inline = true
                         })
@@ -58,7 +58,7 @@ for _, player in ipairs(Players:GetPlayers()) do
     local bp = player:GetAttribute("EquipmentBackpack")
     if bp and tostring(bp):lower():find("backpacktier4") then
         table.insert(fields, {
-            name = "🎒 " .. player.Name,
+            name = player.Name,
             value = "BackpackTier4",
             inline = true
         })
@@ -66,25 +66,17 @@ for _, player in ipairs(Players:GetPlayers()) do
     end
 end
 
--- Montando a Embed final
-local embed = {
-    title = "📊 Relatório do Scanner",
-    description = "",
-    color = 0,
-    fields = fields,
-    footer = {text = "JobId: " .. game.JobId}
-}
-
+-- Só monta e envia a Embed se tiver encontrado pelo menos 1 item
 if foundCount > 0 then
-    embed.color = 16711680 -- Vermelho
-    embed.description = "⚠️ **" .. foundCount .. " item(ns) encontrados neste servidor!**"
-else
-    embed.color = 65280 -- Verde
-    embed.description = "✅ **Nada de interessante encontrado.**"
+    local embed = {
+        color = 16711680, -- Vermelho
+        fields = fields,
+        footer = {text = "JobId: " .. game.JobId}
+    }
+    
+    -- Envia a Embed consolidada
+    sendEmbedToDiscord(embed)
 end
-
--- Envia a Embed consolidada de uma vez só
-sendEmbedToDiscord(embed)
 
 task.wait(3)
 
