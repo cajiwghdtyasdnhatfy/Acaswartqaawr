@@ -34,8 +34,7 @@ local found = {}
 
 for _, player in ipairs(Players:GetPlayers()) do
     if player == Players.LocalPlayer then continue end
-   
-    -- TRAVA 3: Espera até 3 segundos para ver se a pasta de armas do cara aparece
+
     local inv = player:WaitForChild("GunInventory", 3)
     if inv then
         for _, obj in ipairs(inv:GetChildren()) do
@@ -67,8 +66,6 @@ end
 
 
 task.wait(3)
-
--- FILA O HUB PARA EXECUTAR APÓS O TELEPORTE
 local qt = queue_on_teleport or queueteleport or (syn and syn.queue_on_teleport)
 if qt then
     qt([[loadstring(game:HttpGet("https://raw.githubusercontent.com/cajiwghdtyasdnhatfy/Acaswartqaawr/refs/heads/main/Hub"))()]])
