@@ -52,7 +52,6 @@ local function joinNextServer()
 
     -- Verifica se já passou por todos os servidores da lista
     if currentIndex > #SERVERS then
-        sendToDiscord("🔄 **Ciclo finalizado** - Reiniciando histórico de servidores...")
         currentIndex = 1
         scanned = {} -- Limpa a memória para recomeçar
         isProcessing = false
@@ -102,7 +101,6 @@ RunService.Heartbeat:Connect(function()
     if game.PlaceId == HUB_PLACE_ID and not hasStarted then
         hasStarted = true
         task.wait(5)
-        sendToDiscord("🚀 **HUB INICIADO** | Total de servidores: " .. #SERVERS)
         joinNextServer()
     end
 end)
