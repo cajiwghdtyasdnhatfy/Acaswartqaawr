@@ -1,4 +1,4 @@
--- === HUB CONTROLLER DEFINITIVO (SEM BUG DE ONTELEPORT) ===
+-- === HUB CONTROLLER DEFINITIVO (COM TXT NO WORKSPACE) ===
 local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
@@ -6,7 +6,6 @@ local RunService = game:GetService("RunService")
 
 -- Aguarda o LocalPlayer carregar para evitar qualquer erro de "nil"
 local LocalPlayer = Players.LocalPlayer or Players:GetPropertyChangedSignal("LocalPlayer"):Wait()
-
 local Library = nil
 pcall(function()
     Library = require(game.ReplicatedStorage:WaitForChild("Library", 15))
@@ -27,7 +26,36 @@ local SERVERS = {
     "Scourge", "Sentinel", "Shade", "Sierra", "Tango", "Tempest", "Torment", "Ulcer", "Unholy"
 }
 
-local scanned = {}
+local FILENAME = "scanned_servers.txt"
+
+-- Função para carregar o histórico de servidores do TXT
+local function loadScanned()
+    if isfile and isfile(FILENAME) then
+        local data = readfile(FILENAME)
+        local success, decoded = pcall(function()
+            return HttpService:JSONDecode(data)
+        end)
+        if success and type(decoded) == "table" then
+            return decoded
+        end
+    end
+    return {}
+end
+
+-- Função para salvar o histórico no TXT
+local function saveScanned(data)
+    if writefile then
+        local success, encoded = pcall(function()
+            return HttpService:JSONEncode(data)
+        end)
+        if success then
+            writefile(FILENAME, encoded)
+        end
+    end
+end
+
+-- Carrega a lista salva no workspace do executor
+local scanned = loadScanned()
 local currentIndex = 1
 local isProcessing = false
 local hasStarted = false
@@ -53,7 +81,8 @@ local function joinNextServer()
     -- Verifica se já passou por todos os servidores da lista
     if currentIndex > #SERVERS then
         currentIndex = 1
-        scanned = {} -- Limpa a memória para recomeçar
+        scanned = {} 
+        saveScanned(scanned) -- Limpa o TXT para recomeçar o ciclo limpo
         isProcessing = false
         task.wait(5)
         return joinNextServer()
@@ -62,14 +91,15 @@ local function joinNextServer()
     local serverName = SERVERS[currentIndex]
     currentIndex += 1
 
-    -- Se já escaneou, pula silenciosamente pro próximo
-    if scanned[serverName] then 
+    -- Se já escaneou (verificado pelo TXT carregado), pula silenciosamente
+    if scanned[serverName] then
         isProcessing = false
-        return joinNextServer() 
+        return joinNextServer()
     end
 
-    -- Marca como visitado
+    -- Marca como visitado e já atualiza o arquivo TXT antes do teleporte
     scanned[serverName] = true
+    saveScanned(scanned)
 
     sendToDiscord("Server: " .. serverName)
 
