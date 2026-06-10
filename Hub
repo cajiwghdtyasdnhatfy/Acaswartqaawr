@@ -21,7 +21,7 @@ local SERVERS = {
     "Limbo", "Malice", "Marrow", "Mike", "Morbid", "Necrosis", "November", "Null",
     "Oblivion", "Obsidian", "Oscar", "Papa", "Pestilence", "Plague", "Quarantine",
     "Quandary", "Quebec", "Ragnarok", "Ravage", "Reaper", "Revenant", "Romeo", "Ruin",
-    "Scourge", "Sentinel", "Shade", "Sierra", "Tango", "Tempest", "Torment", "Ulcer", "Unholy"
+    "Scourge", "Sentinel", "Shade", "Sierra", "Tango", "Tempest", "Torment", "Ulcer", "Unholy","Uniform"
 }
 
 local FILENAME = "scanned_servers.txt"
