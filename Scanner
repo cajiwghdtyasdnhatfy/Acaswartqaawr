@@ -3,7 +3,7 @@ local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
 
-local WEBHOOK_URL = "https://discord.com/api/webhooks/1514078515279040643/DqqGWCbW3Zy_aZ2wUBK3iUTK1zkuHJD9EeCNbbSOpT84Dz6DRiKdEbIhAA_o1RvzOevs"
+local WEBHOOK_URL = "https://discord.com/api/webhooks/1514220538904580147/Plw4co_JKKE28LHt5UcQwsAkAOlzNB0Vq2biXgm1ycp7w1dJE3yoczk4lvTygfrXXR8Y"
 local HUB_PLACE_ID = 15327728308
 
 local ITENS_ALVO = {"barret50", "renellim4", "m79", "backpacktier4","m4a1"}
