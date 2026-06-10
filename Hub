@@ -1,6 +1,11 @@
--- === HUB CONTROLLER - LOOP INFINITO + PULAR CHEIO ===
+-- === HUB CONTROLLER DEFINITIVO (SEM BUG DE ONTELEPORT) ===
 local Players = game:GetService("Players")
+local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
+local RunService = game:GetService("RunService")
+
+-- Aguarda o LocalPlayer carregar para evitar qualquer erro de "nil"
+local LocalPlayer = Players.LocalPlayer or Players:GetPropertyChangedSignal("LocalPlayer"):Wait()
 
 local Library = nil
 pcall(function()
@@ -24,8 +29,8 @@ local SERVERS = {
 
 local scanned = {}
 local currentIndex = 1
-local scanningActive = true
 local isProcessing = false
+local hasStarted = false
 
 local function sendToDiscord(msg)
     local req = syn and syn.request or http_request or request
@@ -42,14 +47,14 @@ local function sendToDiscord(msg)
 end
 
 local function joinNextServer()
-    if not scanningActive or isProcessing then return end
+    if isProcessing then return end
     isProcessing = true
 
-    -- Loop infinito: reinicia do começo
+    -- Verifica se já passou por todos os servidores da lista
     if currentIndex > #SERVERS then
-        sendToDiscord("🔄 **Ciclo finalizado** - Reiniciando do início...")
+        sendToDiscord("🔄 **Ciclo finalizado** - Reiniciando histórico de servidores...")
         currentIndex = 1
-        scanned = {}
+        scanned = {} -- Limpa a memória para recomeçar
         isProcessing = false
         task.wait(5)
         return joinNextServer()
@@ -58,45 +63,46 @@ local function joinNextServer()
     local serverName = SERVERS[currentIndex]
     currentIndex += 1
 
+    -- Se já escaneou, pula silenciosamente pro próximo
     if scanned[serverName] then 
         isProcessing = false
         return joinNextServer() 
     end
 
+    -- Marca como visitado
     scanned[serverName] = true
 
-    print("Entrando em servidor: " .. serverName)
-    sendToDiscord("🔄 **Entrando em:** " .. serverName .. " (" .. (currentIndex-1) .. "/" .. #SERVERS .. ")")
+    sendToDiscord("Server: " .. serverName)
 
     if Library and Library.Network then
         Library.Network:Fire("Player.JoinServer", serverName)
     end
 
-    task.wait(2)
+    task.wait(6)
     isProcessing = false
 end
 
--- Queue
-local qt = queue_on_teleport or queueteleport or (syn and syn.queue_on_teleport)
-if qt then
-    qt([[if game.PlaceId ~= 15327728308 then loadstring(game:HttpGet("https://raw.githubusercontent.com/cajiwghdtyasdnhatfy/Acaswartqaawr/refs/heads/main/Scanner"))() end]])
-end
-
--- Detecta retorno ao Hub
-Players.LocalPlayer.OnTeleport:Connect(function()
-    task.wait(8)
-    if game.PlaceId == HUB_PLACE_ID then
-        print("Retornou ao Hub - Aguardando...")
-        task.wait(7)
+-- Detecção de Falhas (Se o servidor estiver cheio, pula na hora)
+TeleportService.TeleportInitFailed:Connect(function(player, result, errorMessage)
+    if errorMessage and string.find(string.lower(errorMessage), "full") then
+        task.wait(1)
+        isProcessing = false
         joinNextServer()
     end
 end)
 
--- Início
-if game.PlaceId == HUB_PLACE_ID then
-    sendToDiscord("🚀 **HUB SCANNER INICIADO** | Total de servidores: " .. #SERVERS)
-    task.wait(10)
-    joinNextServer()
-else
-    warn("Execute no Hub!")
+-- Queue: Executa o Scanner automaticamente assim que teleportar pro server do jogo
+local qt = queue_on_teleport or queueteleport or (syn and syn.queue_on_teleport)
+if qt then
+    qt([[loadstring(game:HttpGet("https://raw.githubusercontent.com/cajiwghdtyasdnhatfy/Acaswartqaawr/refs/heads/main/Scanner"))()]])
 end
+
+-- Monitoramento Seguro (Substitui o OnTeleport bugado)
+RunService.Heartbeat:Connect(function()
+    if game.PlaceId == HUB_PLACE_ID and not hasStarted then
+        hasStarted = true
+        task.wait(5)
+        sendToDiscord("🚀 **HUB INICIADO** | Total de servidores: " .. #SERVERS)
+        joinNextServer()
+    end
+end)
