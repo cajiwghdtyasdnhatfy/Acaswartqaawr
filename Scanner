@@ -67,7 +67,7 @@ else
     sendToDiscord("Nada encontrado")
 end
 
-sendToDiscord("🔄 Voltando para o hub em 3 segundos...")
+
 task.wait(3)
 
 -- FILA O HUB PARA EXECUTAR APÓS O TELEPORTE
