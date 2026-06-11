@@ -126,11 +126,9 @@ if success and emberLibrary then
 end
 
 if zombieCount > 0 then
-    sendToDiscord("<@&" .. CARGO_SPECIAL_ZOMBIE .. "> Special Zombie: " .. zombieCount)
 end
 
 if #found > 0 then
-    sendToDiscord("Found Total: " .. #found)
 else
     sendToDiscord("Nothing")
 end
