@@ -3,7 +3,7 @@ local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
 local ReplicatedFirst = game:GetService("ReplicatedFirst")
 
-local WEBHOOK_URL = "https://discord.com/api/webhooks/1514748524296671282/9J11VQSSouvecVvkVOPX_smXAZweVXmqgcTecrhtjZPW4eCPCBjNRpVltsmsFdJERxXO"
+local WEBHOOK_URL = "https://discord.com/api/webhooks/1514748526259863573/penNBANl1GuMF8Gn3Gb4A533oMZa7AK81y07zsWRwqPaXRxGTtCLLiSWjV3ZyhziTy8w"
 local HUB_PLACE_ID = 15327728308
 
 local CARGO_GUNS = "1514232556852215918"
