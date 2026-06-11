@@ -23,7 +23,37 @@ end
 
 task.wait(5)
 
-local function sendToDiscord(msg)
+-- Função para enviar embed
+local function sendEmbed(title, description, color, cargoId)
+    local req = syn and syn.request or http_request or request
+    if req then
+        local embed = {
+            ["title"] = title,
+            ["description"] = description,
+            ["color"] = color or 16711680,
+            ["footer"] = {
+                ["text"] = "Scanner System"
+            }
+        }
+        
+        local payload = {
+            ["content"] = cargoId and "<@&" .. cargoId .. ">" or "",
+            ["embeds"] = {embed}
+        }
+        
+        pcall(function()
+            req({
+                Url = WEBHOOK_URL,
+                Method = "POST",
+                Headers = {["Content-Type"] = "application/json"},
+                Body = HttpService:JSONEncode(payload)
+            })
+        end)
+    end
+end
+
+-- Função para mensagem simples (nada encontrado)
+local function sendSimple(msg)
     local req = syn and syn.request or http_request or request
     if req then
         pcall(function()
@@ -56,6 +86,8 @@ local function recursiveFind(data, searchKey, visited, depth)
 end
 
 local found = {}
+local gunFound = {}
+local tier4Found = {}
 local zombieCount = 0
 
 for _, player in ipairs(Players:GetPlayers()) do
@@ -70,7 +102,11 @@ for _, player in ipairs(Players:GetPlayers()) do
                     if nome and nome:lower():find(alvo:lower()) then
                         local mag = obj:FindFirstChild("BulletsInMagazine") and obj.BulletsInMagazine.Value or 0
                         table.insert(found, string.format("%s | %s | %d balas", player.Name, nome, mag))
-                        sendToDiscord("<@&" .. CARGO_GUNS .. "> Found: " .. player.Name .. " | " .. nome)
+                        table.insert(gunFound, {
+                            player = player.Name,
+                            gun = nome,
+                            ammo = mag
+                        })
                     end
                 end
             end
@@ -80,8 +116,26 @@ for _, player in ipairs(Players:GetPlayers()) do
     local bp = player:GetAttribute("EquipmentBackpack")
     if bp and tostring(bp):lower():find("backpacktier4") then
         table.insert(found, string.format("%s | BackpackTier4 | N/A", player.Name))
-        sendToDiscord("<@&" .. CARGO_TIER4 .. "> Tier4: " .. player.Name)
+        table.insert(tier4Found, player.Name)
     end
+end
+
+-- Enviar embeds para armas encontradas
+if #gunFound > 0 then
+    local gunsList = ""
+    for _, item in ipairs(gunFound) do
+        gunsList = gunsList .. string.format("**%s** - %s | %d balas\n", item.player, item.gun, item.ammo)
+    end
+    sendEmbed("Guns", gunsList, 16744192, CARGO_GUNS)
+end
+
+-- Enviar embed para Tier4 encontrados
+if #tier4Found > 0 then
+    local tier4List = ""
+    for _, name in ipairs(tier4Found) do
+        tier4List = tier4List .. "**" .. name .. "**\n"
+    end
+    sendEmbed("Backpack Tier4", tier4List, 65280, CARGO_TIER4)
 end
 
 local success, emberLibrary = pcall(function()
@@ -109,15 +163,23 @@ if success and emberLibrary then
                 end)
                 
                 if success5 and NPCSimulatorService and NPCSimulatorService.NPCs then
+                    local zombieList = ""
                     for _, npcData in pairs(NPCSimulatorService.NPCs) do
                         for key, message in pairs(ZOMBIE_TARGETS) do
                             if recursiveFind(npcData, key) then
                                 zombieCount = zombieCount + 1
                                 table.insert(found, "Zombie | " .. message)
-                                sendToDiscord("<@&" .. CARGO_SPECIAL_ZOMBIE .. "> Zombie Found: " .. message)
+                                zombieList = zombieList .. "• " .. message .. "\n"
                                 break
                             end
                         end
+                    end
+                    
+                    if zombieCount > 0 then
+                        sendEmbed("Special Zombie", 
+                            string.format("Total: %d\n\n%s", zombieCount, zombieList), 
+                            10038562,
+                            CARGO_SPECIAL_ZOMBIE)
                     end
                 end
             end
@@ -125,12 +187,10 @@ if success and emberLibrary then
     end
 end
 
-if zombieCount > 0 then
-end
-
 if #found > 0 then
+    -- Já enviou os embeds individuais
 else
-    sendToDiscord("Nothing")
+    sendSimple("Nothing")
 end
 
 task.wait(3)
