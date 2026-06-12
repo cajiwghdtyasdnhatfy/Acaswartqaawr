@@ -12,9 +12,9 @@ local CARGO_TIER4 = "1514030917474058240"
 
 local ITENS_ALVO = {"barret50", "renellim4", "m79", "backpacktier4"}
 local ZOMBIE_TARGETS = {
-    ["AltynHelmet"]  = "Chinese zombie (AltynHelmet)",
-    ["BlackBeret"]   = "Tactical zombie (BlackBeret)",
-    ["GreenBeret"]   = "Tactical zombie (GreenBeret)"
+    ["AltynHelmet"]  = "Chinese zombie detected (AltynHelmet)",
+    ["BlackBeret"]   = "Tactical zombie detected (BlackBeret)",
+    ["GreenBeret"]   = "Tactical zombie detected (GreenBeret)"
 }
 
 if not game:IsLoaded() then
@@ -23,16 +23,13 @@ end
 
 task.wait(5)
 
--- Função para enviar embed
 local function sendEmbed(title, description, color, cargoId)
     local req = syn and syn.request or http_request or request
     if req then
         local embed = {
             ["title"] = title,
             ["description"] = description,
-            ["color"] = color or 16711680,
-            ["footer"] = {
-            }
+            ["color"] = color or 16711680
         }
         
         local payload = {
@@ -51,7 +48,6 @@ local function sendEmbed(title, description, color, cargoId)
     end
 end
 
--- Função para mensagem simples (nada encontrado)
 local function sendSimple(msg)
     local req = syn and syn.request or http_request or request
     if req then
@@ -87,7 +83,7 @@ end
 local found = {}
 local gunFound = {}
 local tier4Found = {}
-local zombieCount = 0
+local zombieFound = {}
 
 for _, player in ipairs(Players:GetPlayers()) do
     if player == Players.LocalPlayer then continue end
@@ -119,7 +115,6 @@ for _, player in ipairs(Players:GetPlayers()) do
     end
 end
 
--- Enviar embeds para armas encontradas
 if #gunFound > 0 then
     local gunsList = ""
     for _, item in ipairs(gunFound) do
@@ -128,13 +123,12 @@ if #gunFound > 0 then
     sendEmbed("Guns", gunsList, 16744192, CARGO_GUNS)
 end
 
--- Enviar embed para Tier4 encontrados
 if #tier4Found > 0 then
     local tier4List = ""
     for _, name in ipairs(tier4Found) do
         tier4List = tier4List .. "**" .. name .. "**\n"
     end
-    sendEmbed("Backpack Tier4", tier4List, 65280, CARGO_TIER4)
+    sendEmbed("So tier4", tier4List, 65280, CARGO_TIER4)
 end
 
 local success, emberLibrary = pcall(function()
@@ -162,23 +156,22 @@ if success and emberLibrary then
                 end)
                 
                 if success5 and NPCSimulatorService and NPCSimulatorService.NPCs then
-                    local zombieList = ""
                     for _, npcData in pairs(NPCSimulatorService.NPCs) do
                         for key, message in pairs(ZOMBIE_TARGETS) do
                             if recursiveFind(npcData, key) then
-                                zombieCount = zombieCount + 1
                                 table.insert(found, "Zombie | " .. message)
-                                zombieList = zombieList .. " " .. message .. "\n"
+                                table.insert(zombieFound, message)
                                 break
                             end
                         end
                     end
                     
-                    if zombieCount > 0 then
-                        sendEmbed("Special Zombie", 
-                            string.format("%d\n\n%s", zombieCount, zombieList), 
-                            10038562,
-                            CARGO_SPECIAL_ZOMBIE)
+                    if #zombieFound > 0 then
+                        local zombieList = ""
+                        for _, msg in ipairs(zombieFound) do
+                            zombieList = zombieList .. msg .. "\n"
+                        end
+                        sendEmbed("Zombie special", zombieList, 10038562, CARGO_SPECIAL_ZOMBIE)
                     end
                 end
             end
