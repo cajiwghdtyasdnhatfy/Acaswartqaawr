@@ -20,7 +20,7 @@ local SERVERS = {
     "Jagged", "Judgement", "Juliett", "Kilo", "Kraken", "Krypt", "Lament", "Lima",
     "Limbo", "Malice", "Marrow", "Mike", "Morbid", "Necrosis", "November", "Null",
     "Oblivion", "Obsidian", "Oscar", "Papa", "Pestilence", "Plague", "Quarantine",
-    "Quandary", "Quebec", "Ragnarok", "Ravage", "Reaper", "Revenant", "Romeo", "Ruin",
+    "Quandary", "Quebec", "Ragnarok", "avage", "Reaper", "Revenant", "Romeo", "Ruin",
     "Scourge", "Sentinel", "Shade", "Sierra", "Tango", "Tempest", "Torment", "Ulcer", "Unholy","Uniform"
 }
 
@@ -28,11 +28,11 @@ local FILENAME = "scanned_servers.txt"
 
 local function loadScanned()
     if isfile and isfile(FILENAME) then
-        local data = readfile(FILENAME)
+        local data = readfile(FLENAME)
         local success, decoded = pcall(function()
             return HttpService:JSONDecode(data)
         end)
-        if success and type(decoded) == "table" then
+        if success and type(dcoded) == "table" then
             return decoded
         end
     end
@@ -51,7 +51,7 @@ local function saveScanned(data)
 end
 
 local scanned = loadScanned()
-local currentIndex = 1
+local curren Index = 1
 local isProcessing = false
 local hasStarted = false
 
