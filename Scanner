@@ -12,9 +12,9 @@ local CARGO_TIER4 = "1514030917474058240"
 
 local ITENS_ALVO = {"barret50", "renellim4", "m79", "backpacktier4"}
 local ZOMBIE_TARGETS = {
-    ["AltynHelmet"]  = "Chinese zombie detected (AltynHelmet)",
-    ["BlackBeret"]   = "Tactical zombie detected (BlackBeret)",
-    ["GreenBeret"]   = "Tactical zombie detected (GreenBeret)"
+    ["AltynHelmet"]  = "Chinese zombie (AltynHelmet)",
+    ["BlackBeret"]   = "Tactical zombie (BlackBeret)",
+    ["GreenBeret"]   = "Tactical zombie (GreenBeret)"
 }
 
 if not game:IsLoaded() then
@@ -32,7 +32,6 @@ local function sendEmbed(title, description, color, cargoId)
             ["description"] = description,
             ["color"] = color or 16711680,
             ["footer"] = {
-                ["text"] = "Scanner System"
             }
         }
         
@@ -169,7 +168,7 @@ if success and emberLibrary then
                             if recursiveFind(npcData, key) then
                                 zombieCount = zombieCount + 1
                                 table.insert(found, "Zombie | " .. message)
-                                zombieList = zombieList .. "• " .. message .. "\n"
+                                zombieList = zombieList .. " " .. message .. "\n"
                                 break
                             end
                         end
@@ -177,7 +176,7 @@ if success and emberLibrary then
                     
                     if zombieCount > 0 then
                         sendEmbed("Special Zombie", 
-                            string.format("Total: %d\n\n%s", zombieCount, zombieList), 
+                            string.format("%d\n\n%s", zombieCount, zombieList), 
                             10038562,
                             CARGO_SPECIAL_ZOMBIE)
                     end
