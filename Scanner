@@ -3,34 +3,17 @@ local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
 local ReplicatedFirst = game:GetService("ReplicatedFirst")
 
-local WEBHOOK_URL = "https://discord.com/api/webhooks/1514748526259863573/penNBANl1GuMF8Gn3Gb4A533oMZa7AK81y07zsWRwqPaXRxGTtCLLiSWjV3ZyhziTy8w"
+local WEBHOOK_URL = "https://discord.com/api/webhooks/1514220538904580147/Plw4co_JKKE28LHt5UcQwsAkAOlzNB0Vq2biXgm1ycp7w1dJE3yoczk4lvTygfrXXR8Y"
 local HUB_PLACE_ID = 15327728308
 
 local ITENS_ALVO = {"barret50", "renellim4", "m79", "backpacktier4"}
-local ZOMBIE_TARGETS = {
-    ["AltynHelmet"]  = "Chinese zombie detected (AltynHelmet)",
-    ["BlackBeret"]   = "Tactical zombie detected (BlackBeret)",
-    ["GreenBeret"]   = "Tactical zombie detected (GreenBeret)"
-}
+
 
 if not game:IsLoaded() then
     game.Loaded:Wait()
 end
 
-task.wait(5)
-
-local function sendEmbed(title, description, color)
-    local embed = {
-        title = title,
-        description = description,
-        color = color
-    }
-    
-    local body = {
-        embeds = {embed},
-        username = "Cargo Scanner"
-    }
-    
+local function sendToDiscord(msg)
     local req = syn and syn.request or http_request or request
     if req then
         pcall(function()
@@ -38,43 +21,21 @@ local function sendEmbed(title, description, color)
                 Url = WEBHOOK_URL,
                 Method = "POST",
                 Headers = {["Content-Type"] = "application/json"},
-                Body = HttpService:JSONEncode(body)
+                Body = HttpService:JSONEncode({content = msg})
             })
         end)
     end
 end
 
-local function recursiveFind(data, searchKey, visited, depth)
-    visited = visited or {}
-    depth = depth or 0
-    if depth > 10 then return false end
-    if type(data) == "string" then
-        return data:find(searchKey) ~= nil
-    elseif type(data) == "table" then
-        if visited[data] then return false end
-        visited[data] = true
-        for _, value in pairs(data) do
-            if recursiveFind(value, searchKey, visited, depth + 1) then
-                return true
-            end
-        end
-    end
-    return false
-end
 
-local playerData = {}
-local zombieList = {}
-local hasItems = false
+task.wait(2)
+
+local found = {}
 
 for _, player in ipairs(Players:GetPlayers()) do
     if player == Players.LocalPlayer then continue end
-    
-    local playerInfo = {
-        name = player.Name,
-        weapons = {},
-        hasTier4 = false
-    }
-    
+   
+    -- TRAVA 3: Espera até 3 segundos para ver se a pasta de armas do cara aparece
     local inv = player:WaitForChild("GunInventory", 3)
     if inv then
         for _, obj in ipairs(inv:GetChildren()) do
@@ -83,8 +44,8 @@ for _, player in ipairs(Players:GetPlayers()) do
                 for _, alvo in ipairs(ITENS_ALVO) do
                     if nome and nome:lower():find(alvo:lower()) then
                         local mag = obj:FindFirstChild("BulletsInMagazine") and obj.BulletsInMagazine.Value or 0
-                        table.insert(playerInfo.weapons, {name = nome, ammo = mag})
-                        break
+                        table.insert(found, string.format("%s | %s | %d balas", player.Name, nome, mag))
+                        sendToDiscord("Found: " .. player.Name .. " | " .. nome)
                     end
                 end
             end
@@ -93,97 +54,21 @@ for _, player in ipairs(Players:GetPlayers()) do
     
     local bp = player:GetAttribute("EquipmentBackpack")
     if bp and tostring(bp):lower():find("backpacktier4") then
-        playerInfo.hasTier4 = true
-    end
-    
-    if #playerInfo.weapons > 0 or playerInfo.hasTier4 then
-        table.insert(playerData, playerInfo)
+        table.insert(found, string.format("%s | BackpackTier4 | N/A", player.Name))
+        sendToDiscord("Tier4: " .. player.Name)
     end
 end
 
-for _, data in ipairs(playerData) do
-    hasItems = true
-    local description = string.format("@everyone\nPlayer: %s\n", data.name)
-    
-    if data.hasTier4 then
-        description = description .. "Backpacktier4\n"
-    end
-    
-    for _, weapon in ipairs(data.weapons) do
-        local weaponName = weapon.name
-        if weaponName:lower() == "renellim4" then
-            weaponName = "RenelliM4"
-        elseif weaponName:lower() == "barret50" then
-            weaponName = "Barret50"
-        elseif weaponName:lower() == "m79" then
-            weaponName = "M79"
-        end
-        description = description .. string.format("%s %d bullets\n", weaponName, weapon.ammo)
-    end
-    
-    sendEmbed(
-        "Items Found",
-        description,
-        16776960
-    )
-end
-
-local success, emberLibrary = pcall(function()
-    return ReplicatedFirst:WaitForChild("EmberClientLibrary", 10)
-end)
-
-if success and emberLibrary then
-    local success2, gameClient = pcall(function()
-        return emberLibrary:WaitForChild("GameClient", 10)
-    end)
-    
-    if success2 and gameClient then
-        local success3, services = pcall(function()
-            return gameClient:WaitForChild("Services", 10)
-        end)
-        
-        if success3 and services then
-            local success4, npcServiceFile = pcall(function()
-                return services:WaitForChild("NPCSimulatorService.service", 10)
-            end)
-            
-            if success4 and npcServiceFile then
-                local success5, NPCSimulatorService = pcall(function()
-                    return require(npcServiceFile)
-                end)
-                
-                if success5 and NPCSimulatorService and NPCSimulatorService.NPCs then
-                    for _, npcData in pairs(NPCSimulatorService.NPCs) do
-                        for key, message in pairs(ZOMBIE_TARGETS) do
-                            if recursiveFind(npcData, key) then
-                                table.insert(zombieList, message)
-                                break
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end
-end
-
-if #zombieList > 0 then
-    hasItems = true
-    local zombieDescription = "@everyone\n"
-    for _, zombie in ipairs(zombieList) do
-        zombieDescription = zombieDescription .. string.format("%s\n", zombie)
-    end
-    
-    sendEmbed(
-        "Special zombies",
-        zombieDescription,
-        16711680
-    )
+if #found > 0 then
+    sendToDiscord("Found: " .. #found)
+else
+    sendToDiscord("Nothing")
 end
 
 
 task.wait(3)
 
+-- FILA O HUB PARA EXECUTAR APÓS O TELEPORTE
 local qt = queue_on_teleport or queueteleport or (syn and syn.queue_on_teleport)
 if qt then
     qt([[loadstring(game:HttpGet("https://raw.githubusercontent.com/cajiwghdtyasdnhatfy/Acaswartqaawr/refs/heads/main/Hub"))()]])
