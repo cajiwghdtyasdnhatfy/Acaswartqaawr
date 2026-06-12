@@ -106,7 +106,7 @@ for _, data in ipairs(playerData) do
     local description = string.format("@everyone\nPlayer: %s\n", data.name)
     
     if data.hasTier4 then
-        description = description .. "Backpacktier4\n"
+        description = description .. "BackPackTier4\n"
     end
     
     for _, weapon in ipairs(data.weapons) do
@@ -175,7 +175,7 @@ if #zombieList > 0 then
     end
     
     sendEmbed(
-        "Special zombie,
+        "Special zombie",
         zombieDescription,
         16711680
     )
