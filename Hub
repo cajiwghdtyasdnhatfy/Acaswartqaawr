@@ -1,36 +1,61 @@
 local Players = game:GetService("Players")
-local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
-local ReplicatedFirst = game:GetService("ReplicatedFirst")
+local HttpService = game:GetService("HttpService")
+local RunService = game:GetService("RunService")
 
-local WEBHOOK_URL = "https://discord.com/api/webhooks/1514748526259863573/penNBANl1GuMF8Gn3Gb4A533oMZa7AK81y07zsWRwqPaXRxGTtCLLiSWjV3ZyhziTy8w"
+local LocalPlayer = Players.LocalPlayer or Players:GetPropertyChangedSignal("LocalPlayer"):Wait()
+local Library = nil
+pcall(function()
+    Library = require(game.ReplicatedStorage:WaitForChild("Library", 15))
+end)
+
+local WEBHOOK_URL = "https://discord.com/api/webhooks/1514786003897028748/7vcbUSGu4KVaDEAdumH9mSj7agHqxROwYGmM6ipdeHwUfLMT-FpCe4ICxy8v7F_siz80"
 local HUB_PLACE_ID = 15327728308
 
-local ITENS_ALVO = {"barret50", "renellim4", "m79", "backpacktier4"}
-local ZOMBIE_TARGETS = {
-    ["AltynHelmet"]  = "Chinese zombie detected (AltynHelmet)",
-    ["BlackBeret"]   = "Tactical zombie detected (BlackBeret)",
-    ["GreenBeret"]   = "Tactical zombie detected (GreenBeret)"
+local SERVERS = {
+    "Abyss", "Aftermath", "Alpha", "Anarchy", "Armageddon", "Banshee", "Blight", "Bravo",
+    "Carnage", "Cataclysm", "Charlie", "Chaos", "Delta", "Despair", "Doom", "Dread",
+    "Echo", "Eclipse", "Eerie", "Fallout", "Foxtrot", "Frenzy", "Gloom", "Golf",
+    "Grave", "Grim", "Harrow", "Havoc", "Hotel", "Ignition", "India", "Inferno",
+    "Jagged", "Judgement", "Juliett", "Kilo", "Kraken", "Krypt", "Lament", "Lima",
+    "Limbo", "Malice", "Marrow", "Mike", "Morbid", "Necrosis", "November", "Null",
+    "Oblivion", "Obsidian", "Oscar", "Papa", "Pestilence", "Plague", "Quarantine",
+    "Quandary", "Quebec", "Ragnarok", "Ravage", "Reaper", "Revenant", "Romeo", "Ruin",
+    "Scourge", "Sentinel", "Shade", "Sierra", "Tango", "Tempest", "Torment", "Ulcer", "Unholy","Uniform"
 }
 
-if not game:IsLoaded() then
-    game.Loaded:Wait()
+local FILENAME = "scanned_servers.txt"
+
+local function loadScanned()
+    if isfile and isfile(FILENAME) then
+        local data = readfile(FILENAME)
+        local success, decoded = pcall(function()
+            return HttpService:JSONDecode(data)
+        end)
+        if success and type(decoded) == "table" then
+            return decoded
+        end
+    end
+    return {}
 end
 
-task.wait(5)
+local function saveScanned(data)
+    if writefile then
+        local success, encoded = pcall(function()
+            return HttpService:JSONEncode(data)
+        end)
+        if success then
+            writefile(FILENAME, encoded)
+        end
+    end
+end
 
-local function sendEmbed(title, description, color)
-    local embed = {
-        title = title,
-        description = description,
-        color = color
-    }
-    
-    local body = {
-        embeds = {embed},
-        username = "Cargo Scanner"
-    }
-    
+local scanned = loadScanned()
+local currentIndex = 1
+local isProcessing = false
+local hasStarted = false
+
+local function sendToDiscord(msg)
     local req = syn and syn.request or http_request or request
     if req then
         pcall(function()
@@ -38,162 +63,63 @@ local function sendEmbed(title, description, color)
                 Url = WEBHOOK_URL,
                 Method = "POST",
                 Headers = {["Content-Type"] = "application/json"},
-                Body = HttpService:JSONEncode(body)
+                Body = HttpService:JSONEncode({content = msg})
             })
         end)
     end
 end
 
-local function recursiveFind(data, searchKey, visited, depth)
-    visited = visited or {}
-    depth = depth or 0
-    if depth > 10 then return false end
-    if type(data) == "string" then
-        return data:find(searchKey) ~= nil
-    elseif type(data) == "table" then
-        if visited[data] then return false end
-        visited[data] = true
-        for _, value in pairs(data) do
-            if recursiveFind(value, searchKey, visited, depth + 1) then
-                return true
-            end
-        end
+local function joinNextServer()
+    if isProcessing then return end
+    isProcessing = true
+
+    if currentIndex > #SERVERS then
+        currentIndex = 1
+        scanned = {} 
+        saveScanned(scanned) 
+        isProcessing = false
+        task.wait(5)
+        return joinNextServer()
     end
-    return false
+
+    local serverName = SERVERS[currentIndex]
+    currentIndex += 1
+
+    if scanned[serverName] then
+        isProcessing = false
+        return joinNextServer()
+    end
+
+    scanned[serverName] = true
+    saveScanned(scanned)
+
+    sendToDiscord("Server: " .. serverName)
+
+    if Library and Library.Network then
+        Library.Network:Fire("Player.JoinServer", serverName)
+    end
+
+    task.wait(1)
+    isProcessing = false
 end
 
-local playerData = {}
-local zombieList = {}
-local hasItems = false
-
-for _, player in ipairs(Players:GetPlayers()) do
-    if player == Players.LocalPlayer then continue end
-    
-    local playerInfo = {
-        name = player.Name,
-        weapons = {},
-        hasTier4 = false
-    }
-    
-    local inv = player:WaitForChild("GunInventory", 3)
-    if inv then
-        for _, obj in ipairs(inv:GetChildren()) do
-            if obj:IsA("ObjectValue") and obj.Value then
-                local nome = obj.Value.Name
-                for _, alvo in ipairs(ITENS_ALVO) do
-                    if nome and nome:lower():find(alvo:lower()) then
-                        local mag = obj:FindFirstChild("BulletsInMagazine") and obj.BulletsInMagazine.Value or 0
-                        table.insert(playerInfo.weapons, {name = nome, ammo = mag})
-                        break
-                    end
-                end
-            end
-        end
+TeleportService.TeleportInitFailed:Connect(function(player, result, errorMessage)
+    if errorMessage and string.find(string.lower(errorMessage), "full") then
+        task.wait(1)
+        isProcessing = false
+        joinNextServer()
     end
-    
-    local bp = player:GetAttribute("EquipmentBackpack")
-    if bp and tostring(bp):lower():find("backpacktier4") then
-        playerInfo.hasTier4 = true
-    end
-    
-    if #playerInfo.weapons > 0 or playerInfo.hasTier4 then
-        table.insert(playerData, playerInfo)
-    end
-end
-
-for _, data in ipairs(playerData) do
-    hasItems = true
-    local description = string.format("@everyone\nPlayer: %s\n", data.name)
-    
-    if data.hasTier4 then
-        description = description .. "BackPackTier4\n"
-    end
-    
-    for _, weapon in ipairs(data.weapons) do
-        local weaponName = weapon.name
-        if weaponName:lower() == "renellim4" then
-            weaponName = "RenelliM4"
-        elseif weaponName:lower() == "barret50" then
-            weaponName = "Barret50"
-        elseif weaponName:lower() == "m79" then
-            weaponName = "M79"
-        end
-        description = description .. string.format("%s %d bullets\n", weaponName, weapon.ammo)
-    end
-    
-    sendEmbed(
-        "Items Found",
-        description,
-        16776960
-    )
-end
-
-local success, emberLibrary = pcall(function()
-    return ReplicatedFirst:WaitForChild("EmberClientLibrary", 10)
 end)
-
-if success and emberLibrary then
-    local success2, gameClient = pcall(function()
-        return emberLibrary:WaitForChild("GameClient", 10)
-    end)
-    
-    if success2 and gameClient then
-        local success3, services = pcall(function()
-            return gameClient:WaitForChild("Services", 10)
-        end)
-        
-        if success3 and services then
-            local success4, npcServiceFile = pcall(function()
-                return services:WaitForChild("NPCSimulatorService.service", 10)
-            end)
-            
-            if success4 and npcServiceFile then
-                local success5, NPCSimulatorService = pcall(function()
-                    return require(npcServiceFile)
-                end)
-                
-                if success5 and NPCSimulatorService and NPCSimulatorService.NPCs then
-                    for _, npcData in pairs(NPCSimulatorService.NPCs) do
-                        for key, message in pairs(ZOMBIE_TARGETS) do
-                            if recursiveFind(npcData, key) then
-                                table.insert(zombieList, message)
-                                break
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end
-end
-
-if #zombieList > 0 then
-    hasItems = true
-    local zombieDescription = "@everyone\n"
-    for _, zombie in ipairs(zombieList) do
-        zombieDescription = zombieDescription .. string.format("%s\n", zombie)
-    end
-    
-    sendEmbed(
-        "Special Zombies Found",
-        zombieDescription,
-        16711680
-    )
-end
-
-if not hasItems then
-    sendEmbed(
-        "Scan Complete",
-        "Nothing found in this server.",
-        16777215
-    )
-end
-
-task.wait(3)
 
 local qt = queue_on_teleport or queueteleport or (syn and syn.queue_on_teleport)
 if qt then
-    qt([[loadstring(game:HttpGet("https://raw.githubusercontent.com/cajiwghdtyasdnhatfy/Acaswartqaawr/refs/heads/main/Hub"))()]])
+    qt([[loadstring(game:HttpGet("https://raw.githubusercontent.com/cajiwghdtyasdnhatfy/Acaswartqaawr/refs/heads/main/Scanner"))()]])
 end
 
-TeleportService:Teleport(HUB_PLACE_ID)
+RunService.Heartbeat:Connect(function()
+    if game.PlaceId == HUB_PLACE_ID and not hasStarted then
+        hasStarted = true
+        task.wait(2)
+        joinNextServer()
+    end
+end)
