@@ -6,15 +6,11 @@ local ReplicatedFirst = game:GetService("ReplicatedFirst")
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1514748526259863573/penNBANl1GuMF8Gn3Gb4A533oMZa7AK81y07zsWRwqPaXRxGTtCLLiSWjV3ZyhziTy8w"
 local HUB_PLACE_ID = 15327728308
 
-local CARGO_GUNS = "1514232556852215918"
-local CARGO_SPECIAL_ZOMBIE = "1514232594429116426"
-local CARGO_TIER4 = "1514030917474058240"
-
 local ITENS_ALVO = {"barret50", "renellim4", "m79", "backpacktier4"}
 local ZOMBIE_TARGETS = {
-    ["AltynHelmet"]  = "Chinese zombie (AltynHelmet)",
-    ["BlackBeret"]   = "Tactical zombie (BlackBeret)",
-    ["GreenBeret"]   = "Tactical zombie (GreenBeret)"
+    ["AltynHelmet"]  = "Chinese zombie detected (AltynHelmet)",
+    ["BlackBeret"]   = "Tactical zombie detected (BlackBeret)",
+    ["GreenBeret"]   = "Tactical zombie detected (GreenBeret)"
 }
 
 if not game:IsLoaded() then
@@ -66,11 +62,10 @@ local function recursiveFind(data, searchKey, visited, depth)
     return false
 end
 
-local playerData = {} -- Para agrupar dados por jogador
-local zombieCount = 0
+local playerData = {}
 local zombieList = {}
+local hasItems = false
 
--- Coletar dados dos jogadores
 for _, player in ipairs(Players:GetPlayers()) do
     if player == Players.LocalPlayer then continue end
     
@@ -106,33 +101,33 @@ for _, player in ipairs(Players:GetPlayers()) do
     end
 end
 
--- Enviar embed para cada jogador com todos os seus itens
 for _, data in ipairs(playerData) do
-    local description = string.format("**Player:** %s\n", data.name)
-    
-    if #data.weapons > 0 then
-        description = description .. "\n**Weapons Found:**\n"
-        for _, weapon in ipairs(data.weapons) do
-            description = description .. string.format("- %s (%d bullets)\n", weapon.name, weapon.ammo)
-        end
-        description = description .. string.format("\n<@&%s>", CARGO_GUNS)
-    end
+    hasItems = true
+    local description = string.format("@everyone\nPlayer: %s\n", data.name)
     
     if data.hasTier4 then
-        if #data.weapons > 0 then
-            description = description .. "\n\n"
+        description = description .. "Backpacktier4\n"
+    end
+    
+    for _, weapon in ipairs(data.weapons) do
+        local weaponName = weapon.name
+        if weaponName:lower() == "renellim4" then
+            weaponName = "RenelliM4"
+        elseif weaponName:lower() == "barret50" then
+            weaponName = "Barret50"
+        elseif weaponName:lower() == "m79" then
+            weaponName = "M79"
         end
-        description = description .. string.format("**Backpack:** Backpack Tier 4\n<@&%s>", CARGO_TIER4)
+        description = description .. string.format("%s %d bullets\n", weaponName, weapon.ammo)
     end
     
     sendEmbed(
-        "Tier4",
+        "Items Found",
         description,
         16776960
     )
 end
 
--- Coletar zumbis
 local success, emberLibrary = pcall(function()
     return ReplicatedFirst:WaitForChild("EmberClientLibrary", 10)
 end)
@@ -161,7 +156,6 @@ if success and emberLibrary then
                     for _, npcData in pairs(NPCSimulatorService.NPCs) do
                         for key, message in pairs(ZOMBIE_TARGETS) do
                             if recursiveFind(npcData, key) then
-                                zombieCount = zombieCount + 1
                                 table.insert(zombieList, message)
                                 break
                             end
@@ -173,21 +167,19 @@ if success and emberLibrary then
     end
 end
 
--- Enviar zumbis agrupados
 if #zombieList > 0 then
-    local zombieDescription = ""
+    hasItems = true
+    local zombieDescription = "@everyone\n"
     for _, zombie in ipairs(zombieList) do
-        zombieDescription = zombieDescription .. string.format("- %s\n", zombie)
+        zombieDescription = zombieDescription .. string.format("%s\n", zombie)
     end
-    zombieDescription = zombieDescription .. string.format("\n<@&%s>", CARGO_SPECIAL_ZOMBIE)
     
     sendEmbed(
-        "Special zombie",
+        "Special Zombies Found",
         zombieDescription,
         16711680
     )
 end
-
 
 
 task.wait(3)
