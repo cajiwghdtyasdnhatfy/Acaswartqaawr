@@ -6,10 +6,6 @@ local ReplicatedFirst = game:GetService("ReplicatedFirst")
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1514748526259863573/penNBANl1GuMF8Gn3Gb4A533oMZa7AK81y07zsWRwqPaXRxGTtCLLiSWjV3ZyhziTy8w"
 local HUB_PLACE_ID = 15327728308
 
-local CARGO_GUNS = "1514232556852215918"
-local CARGO_SPECIAL_ZOMBIE = "1514232594429116426"
-local CARGO_TIER4 = "1514030917474058240"
-
 local ITENS_ALVO = {"barret50", "renellim4", "m79", "backpacktier4"}
 local ZOMBIE_TARGETS = {
     ["AltynHelmet"]  = "Chinese zombie detected (AltynHelmet)",
@@ -68,6 +64,7 @@ end
 
 local playerData = {}
 local zombieList = {}
+local hasItems = false
 
 for _, player in ipairs(Players:GetPlayers()) do
     if player == Players.LocalPlayer then continue end
@@ -105,21 +102,23 @@ for _, player in ipairs(Players:GetPlayers()) do
 end
 
 for _, data in ipairs(playerData) do
-    local description = string.format("Player: %s\n", data.name)
-    
-    if #data.weapons > 0 then
-        description = description .. "\nWeapons Found:\n"
-        for _, weapon in ipairs(data.weapons) do
-            description = description .. string.format("%s %d bullets\n", weapon.name, weapon.ammo)
-        end
-        description = description .. string.format("\n<@&%s>", CARGO_GUNS)
-    end
+    hasItems = true
+    local description = string.format("@everyone\nPlayer: %s\n", data.name)
     
     if data.hasTier4 then
-        if #data.weapons > 0 then
-            description = description .. "\n\n"
+        description = description .. "BackPackTier4\n"
+    end
+    
+    for _, weapon in ipairs(data.weapons) do
+        local weaponName = weapon.name
+        if weaponName:lower() == "renellim4" then
+            weaponName = "RenelliM4"
+        elseif weaponName:lower() == "barret50" then
+            weaponName = "Barret50"
+        elseif weaponName:lower() == "m79" then
+            weaponName = "M79"
         end
-        description = description .. string.format("Backpack: Backpack Tier 4\n<@&%s>", CARGO_TIER4)
+        description = description .. string.format("%s %d bullets\n", weaponName, weapon.ammo)
     end
     
     sendEmbed(
@@ -169,19 +168,26 @@ if success and emberLibrary then
 end
 
 if #zombieList > 0 then
-    local zombieDescription = ""
+    hasItems = true
+    local zombieDescription = "@everyone\n"
     for _, zombie in ipairs(zombieList) do
         zombieDescription = zombieDescription .. string.format("%s\n", zombie)
     end
-    zombieDescription = zombieDescription .. string.format("\n<@&%s>", CARGO_SPECIAL_ZOMBIE)
     
     sendEmbed(
-        "Special zombie",
+        "Special Zombies Found",
         zombieDescription,
         16711680
     )
 end
 
+if not hasItems then
+    sendEmbed(
+        "Scan Complete",
+        "Nothing found in this server.",
+        16777215
+    )
+end
 
 task.wait(3)
 
