@@ -4,7 +4,7 @@ local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
 local ReplicatedFirst = game:GetService("ReplicatedFirst")
 
-local WEBHOOK_URL = "https://discord.com/api/webhooks/1514220538904580147/Plw4co_JKKE28LHt5UcQwsAkAOlzNB0Vq2biXgm1ycp7w1dJE3yoczk4lvTygfrXXR8Y"
+local WEBHOOK_URL = "https://discord.com/api/webhooks/1514748526259863573/penNBANl1GuMF8Gn3Gb4A533oMZa7AK81y07zsWRwqPaXRxGTtCLLiSWjV3ZyhziTy8w"
 local HUB_PLACE_ID = 15327728308
 
 local ITENS_ALVO = {"barret50", "renellim4", "m79", "backpacktier4"}
