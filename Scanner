@@ -175,7 +175,7 @@ if #zombieList > 0 then
     end
     
     sendEmbed(
-        "Special Zombies Found",
+        "Special zombie,
         zombieDescription,
         16711680
     )
